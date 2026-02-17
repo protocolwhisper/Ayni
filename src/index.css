@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  --sky-display: 'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif;
+  --sky-body: 'Manrope', 'SF Pro Text', 'Segoe UI', sans-serif;
+  --sky-bg: #090212;
+  --sky-text: #f7eeff;
+  --sky-muted: #c6b0de;
+  --sky-border: rgba(203, 148, 255, 0.3);
+  --sky-card: rgba(35, 13, 56, 0.8);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--sky-bg);
+}
+
+body {
+  font-family: var(--sky-body);
+  color: var(--sky-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
