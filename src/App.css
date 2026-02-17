@@ -4,9 +4,9 @@
   overflow-x: clip;
   color: var(--sky-text);
   background:
-    radial-gradient(92% 62% at 50% -12%, rgba(169, 107, 255, 0.35), rgba(169, 107, 255, 0) 58%),
-    radial-gradient(74% 62% at 100% 16%, rgba(230, 95, 255, 0.22), rgba(230, 95, 255, 0) 64%),
-    linear-gradient(180deg, #1a0a30 0%, #11041f 46%, #07030f 100%);
+    radial-gradient(92% 62% at 50% -12%, rgba(154, 92, 255, 0.28), rgba(154, 92, 255, 0) 58%),
+    radial-gradient(74% 62% at 100% 16%, rgba(215, 88, 255, 0.18), rgba(215, 88, 255, 0) 64%),
+    linear-gradient(180deg, #0f061c 0%, #080311 46%, #030108 100%);
 }
 
 .sky::before,
@@ -22,7 +22,7 @@
   height: 24rem;
   right: -7rem;
   top: 7rem;
-  background: rgba(187, 130, 255, 0.22);
+  background: rgba(170, 112, 255, 0.16);
 }
 
 .sky::after {
@@ -30,16 +30,49 @@
   height: 20rem;
   left: -5rem;
   bottom: 9rem;
-  background: rgba(240, 113, 255, 0.16);
+  background: rgba(240, 113, 255, 0.1);
 }
 
 .sky-noise {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.16;
   background-image: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.06) 0 0.5px, transparent 0.5px);
   background-size: 4px 4px;
+}
+
+.sky-ltc-orbit {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.sky-ltc-coin {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: var(--sky-display);
+  font-weight: 700;
+  font-size: calc(var(--size) * 0.46);
+  color: rgba(245, 223, 255, 0.88);
+  border: 1px solid rgba(229, 180, 255, 0.45);
+  background:
+    radial-gradient(80% 80% at 30% 20%, rgba(255, 244, 255, 0.46), rgba(255, 244, 255, 0) 60%),
+    linear-gradient(145deg, rgba(198, 109, 255, 0.35), rgba(133, 91, 250, 0.2));
+  box-shadow: 0 10px 24px rgba(91, 36, 142, 0.42);
+  backdrop-filter: blur(2px);
+  animation: ltcFloat var(--duration) linear infinite;
+  animation-delay: var(--delay);
+  opacity: 0;
+  will-change: transform;
 }
 
 .sky-nav,
@@ -130,12 +163,28 @@
   }
 }
 
-.sky-hero-copy,
-.sky-hero-media {
-  animation: rise 650ms ease both;
+.sky-hero-copy {
+  /* Staggered animation on children */
 }
 
+.sky-hero-copy .sky-kicker,
+.sky-hero-copy .sky-title,
+.sky-hero-copy .sky-subtitle,
+.sky-hero-copy .sky-actions,
+.sky-hero-copy .sky-stats {
+  opacity: 0;
+  animation: heroCopyRise 0.65s ease both;
+}
+
+.sky-hero-copy .sky-kicker { animation-delay: 0ms; }
+.sky-hero-copy .sky-title { animation-delay: 80ms; }
+.sky-hero-copy .sky-subtitle { animation-delay: 180ms; }
+.sky-hero-copy .sky-actions { animation-delay: 280ms; }
+.sky-hero-copy .sky-stats { animation-delay: 400ms; }
+
 .sky-hero-media {
+  opacity: 0;
+  animation: rise 650ms ease both;
   animation-delay: 120ms;
 }
 
@@ -573,6 +622,17 @@
   font-size: 0.78rem;
 }
 
+@keyframes heroCopyRise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -582,6 +642,24 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes ltcFloat {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate3d(var(--drift), -50vh, 0) rotate(180deg);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(calc(var(--drift) * -0.5), -100vh, 0) rotate(360deg);
+    opacity: 0;
   }
 }
 
