@@ -16,6 +16,10 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 92%;
+}
+
 html,
 body {
   margin: 0;
