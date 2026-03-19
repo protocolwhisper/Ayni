@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Questrial&display=swap');
 
 :root {
-  --sky-display: 'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif;
+  --sky-display: 'Questrial', 'Avenir Next', 'Segoe UI', sans-serif;
   --sky-body: 'Manrope', 'SF Pro Text', 'Segoe UI', sans-serif;
-  --sky-bg: #04010a;
+  --sky-bg: #bcb4c9;
   --sky-text: #f7eeff;
   --sky-muted: #c6b0de;
   --sky-border: rgba(203, 148, 255, 0.3);
@@ -30,6 +30,7 @@ body {
 body {
   font-family: var(--sky-body);
   color: var(--sky-text);
+  background: var(--sky-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

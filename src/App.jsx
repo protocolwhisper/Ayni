@@ -1,11 +1,149 @@
-import { useState, useEffect } from 'react'
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
 const COINGECKO_LTC_PRICE = 'https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd'
-const COINGECKO_LTC_CHART = 'https://api.coingecko.com/api/v3/coins/litecoin/market_chart?vs_currency=usd&days=7'
+const COINGECKO_LTC_CHART =
+  'https://api.coingecko.com/api/v3/coins/litecoin/market_chart?vs_currency=usd&days=7'
 const COINCAP_LTC_PRICE = 'https://api.coincap.io/v2/assets/litecoin'
 const COINCAP_LTC_CHART = 'https://api.coincap.io/v2/assets/litecoin/history?interval=h6'
 const COINBASE_LTC_PRICE = 'https://api.coinbase.com/v2/prices/LTC-USD/spot'
+
+const HERO_LINKS = [
+  { label: 'VISION', href: '#vision' },
+  { label: 'MECHANISM', href: '#mechanism' },
+  { label: 'MILESTONES', href: '#milestones' },
+]
+
+const HIGHLIGHTS = [
+  'Top 20 LTC asset',
+  '100K USDC minted on testnet',
+]
+
+const HERO_STATS = [
+  { value: '60%', label: 'holders need liquidity without selling LTC' },
+  { value: 'Circle CCTP', label: 'native USDC path instead of wrapped synths' },
+  { value: 'LitVM', label: 'execution layer for zkLTC collateral' },
+]
+
+const CONTEXT_CARDS = [
+  {
+    title: 'Vision',
+    body: 'Bridge Litecoin security into native DeFi utility.',
+  },
+  {
+    title: 'The Problem',
+    body: 'Holders need liquidity without selling LTC or trusting wrappers.',
+  },
+  {
+    title: 'The Solution',
+    body: 'Use zkLTC on LitVM to access USDC through Circle CCTP.',
+  },
+]
+
+const MECHANISM = [
+  {
+    title: 'Trustless Bridging',
+    text: 'zkLTC holders on LitVM leverage collateral without centralized intermediaries.',
+  },
+  {
+    title: 'Modular Accounting',
+    text: 'Core logic stays separate from execution adapters, so protocol upgrades do not require liquidity migration.',
+  },
+  {
+    title: 'Native Liquidity',
+    text: 'Circle CCTP delivers Bridged Standard USDC and avoids the de-peg risk of wrapped stablecoin substitutes.',
+  },
+]
+
+const STRATEGY = [
+  {
+    title: 'Circle Primary Partner Path',
+    text: 'By attracting Bridged Standard USDC through official rails, Ayni aims to become the main USDC distribution primitive on LitVM.',
+  },
+  {
+    title: 'Solver Optimization',
+    text: 'Solvers move capital only when demand exists, which improves LP ROI and keeps deployed liquidity productive.',
+  },
+]
+
+const WIN_CARDS = [
+  {
+    label: 'Native USDC',
+    title: 'Skip wrapped token risk',
+    text: 'Users reach official USDC through Circle CCTP instead of synthetic stand-ins.',
+  },
+  {
+    label: 'Proof Layer',
+    title: 'Collateral stays verifiable',
+    text: 'Orbit State Proofs give settlement visibility instead of opaque off-chain accounting.',
+  },
+  {
+    label: 'Solver Design',
+    title: 'Liquidity moves only when needed',
+    text: 'Capital is deployed on demand, which keeps LP inventory productive.',
+  },
+  {
+    label: 'Modular Core',
+    title: 'Upgrades without migration drama',
+    text: 'Execution adapters evolve while core accounting stays intact for the market.',
+  },
+]
+
+const MILESTONES = [
+  'Testnet deployment with successful 100,000 USDC lock/mint against zkLTC.',
+  'Full Orbit State Proof implementation for oracle verification.',
+  'Recognition as a DeFi infrastructure primitive within the LitVM ecosystem.',
+]
+
+const STAKEHOLDERS = [
+  'Lead: Ayni Core Team',
+  'Strategic Partner: LitVM (Infrastructure)',
+  'Primary Users: Long-term Litecoin holders',
+  'Market Makers: Solvers and LPs providing USDC liquidity',
+]
+
+const FLOATING_TAGS = [
+  { label: 'LitVM', x: '14%', y: '15%' },
+  { label: 'zkLTC', x: '73%', y: '18%' },
+  { label: 'Circle CCTP', x: '70%', y: '74%' },
+  { label: 'Orbit Proofs', x: '17%', y: '72%' },
+  { label: 'ERC-4626', x: '48%', y: '10%' },
+]
+
+const HERO_STARS = Array.from({ length: 44 }, (_, index) => ({
+  x: `${(index * 17) % 100}%`,
+  y: `${(index * 29) % 100}%`,
+  size: `${1 + (index % 3)}px`,
+  delay: `${(index % 8) * -0.7}s`,
+  duration: `${5 + (index % 5)}s`,
+}))
+
+const PARTICLES = Array.from({ length: 260 }, (_, index) => {
+  const major = ((index % 52) / 52) * Math.PI * 2
+  const minorBand = Math.floor(index / 52)
+  const minor = (minorBand / 5) * Math.PI * 2
+  const majorRadius = 182
+  const minorRadius = 72 + Math.sin(major * 3 + minor) * 10
+  const depth = Math.cos(minor + major * 0.7)
+  const x = Math.cos(major) * (majorRadius + Math.cos(minor) * minorRadius) * 0.78
+  const y =
+    Math.sin(major) * (majorRadius * 0.34 + Math.cos(minor) * minorRadius * 0.36) +
+    Math.sin(minor) * minorRadius * 0.96
+  const scale = (0.34 + ((depth + 1) / 2) * 0.9).toFixed(3)
+  const opacity = (0.2 + ((depth + 1) / 2) * 0.74).toFixed(3)
+  const blur = depth < -0.18 ? '1.2px' : '0px'
+  const glow = (0.16 + ((depth + 1) / 2) * 0.42).toFixed(3)
+
+  return {
+    x: `${x.toFixed(2)}px`,
+    y: `${y.toFixed(2)}px`,
+    scale,
+    opacity,
+    blur,
+    glow,
+    delay: `${(index % 14) * -0.33}s`,
+  }
+})
 
 function normalizeSeries(pairs) {
   if (!Array.isArray(pairs)) return []
@@ -52,7 +190,7 @@ async function fetchLtcSnapshot() {
       return { price, series, source: 'CoinGecko', warning: null }
     }
   } catch {
-    // Fallback below
+    // Fall through to the next provider.
   }
 
   try {
@@ -66,7 +204,7 @@ async function fetchLtcSnapshot() {
       return { price, series, source: 'CoinCap', warning: null }
     }
   } catch {
-    // Fallback below
+    // Fall through to the next provider.
   }
 
   try {
@@ -77,18 +215,18 @@ async function fetchLtcSnapshot() {
         price,
         series: createFallbackSeries(price),
         source: 'Coinbase',
-        warning: 'Live chart feed unavailable, using estimated curve',
+        warning: 'Live chart feed unavailable, using estimated curve.',
       }
     }
   } catch {
-    // Final fallback below
+    // Fall through to the final fallback.
   }
 
   return {
     price: null,
     series: createFallbackSeries(90),
     source: 'Fallback',
-    warning: 'Live LTC providers temporarily unavailable',
+    warning: 'Live LTC providers temporarily unavailable.',
   }
 }
 
@@ -101,6 +239,7 @@ function LtcPriceChart() {
 
   useEffect(() => {
     let cancelled = false
+
     async function fetchData() {
       try {
         const snapshot = await fetchLtcSnapshot()
@@ -109,274 +248,520 @@ function LtcPriceChart() {
         setChartData(snapshot.series)
         setSource(snapshot.source)
         setError(snapshot.warning)
-      } catch (e) {
+      } catch (err) {
         if (cancelled) return
         setPrice(null)
         setChartData(createFallbackSeries(90))
         setSource('Fallback')
-        setError(e instanceof Error ? e.message : 'Unable to load price')
+        setError(err instanceof Error ? err.message : 'Unable to load price.')
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
+
     fetchData()
     const interval = setInterval(fetchData, 60_000)
+
     return () => {
       cancelled = true
       clearInterval(interval)
     }
   }, [])
 
-  if (loading && price == null && chartData.length === 0) {
+  if (loading && chartData.length === 0) {
     return (
-      <div className="sky-ltc-widget">
-        <div className="sky-ltc-widget-head">
-          <span className="sky-ltc-badge">Ł LTC</span>
-        </div>
-        <p className="sky-ltc-loading">Loading…</p>
-      </div>
+      <article className="market-card">
+        <header className="market-head">
+          <span className="market-badge">Ł LTC</span>
+          <span className="market-source">Loading</span>
+        </header>
+        <p className="market-price">Loading market feed...</p>
+      </article>
     )
   }
-  const values = chartData.map(([, v]) => v).filter((v) => Number.isFinite(v))
-  const hasChart = values.length > 0
-  const min = hasChart ? Math.min(...values) : 0
-  const max = hasChart ? Math.max(...values) : 1
+
+  const values = chartData.map(([, value]) => value).filter((value) => Number.isFinite(value))
+  const min = values.length ? Math.min(...values) : 0
+  const max = values.length ? Math.max(...values) : 1
   const range = max - min || 1
-  const width = 280
-  const height = 100
-  const padding = { top: 8, right: 8, bottom: 8, left: 8 }
-  const innerW = width - padding.left - padding.right
-  const innerH = height - padding.top - padding.bottom
-  const points = values.map((v, i) => {
-    const x = padding.left + (i / (values.length - 1 || 1)) * innerW
-    const y = padding.top + innerH - ((v - min) / range) * innerH
+  const width = 320
+  const height = 110
+  const pad = 8
+  const points = values.map((value, idx) => {
+    const x = pad + (idx / (values.length - 1 || 1)) * (width - pad * 2)
+    const y = pad + (1 - (value - min) / range) * (height - pad * 2)
     return `${x},${y}`
   })
-  const pathD = points.length ? `M ${points.join(' L ')}` : ''
-  const areaD = pathD ? `${pathD} L ${padding.left + innerW},${padding.top + innerH} L ${padding.left},${padding.top + innerH} Z` : ''
+  const path = points.length ? `M ${points.join(' L ')}` : ''
+  const area = path ? `${path} L ${width - pad},${height - pad} L ${pad},${height - pad} Z` : ''
 
   return (
-    <div className="sky-ltc-widget">
-      <div className="sky-ltc-widget-head">
-        <span className="sky-ltc-badge">Ł LTC</span>
-        <span className="sky-ltc-meta">7d · {source}</span>
-      </div>
-      <p className="sky-ltc-price">
+    <article className="market-card">
+      <header className="market-head">
+        <span className="market-badge">Ł LTC</span>
+        <span className="market-source">7D · {source}</span>
+      </header>
+      <p className="market-price">
         $
         {price != null
           ? Number(price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           : '—'}
       </p>
-      <div className="sky-ltc-chart-wrap">
-        <svg className="sky-ltc-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+      <div className="market-chart-wrap">
+        <svg className="market-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
           <defs>
-            <linearGradient id="sky-ltc-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(212, 118, 255, 0.35)" />
-              <stop offset="100%" stopColor="rgba(120, 60, 180, 0)" />
+            <linearGradient id="market-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(218, 201, 255, 0.52)" />
+              <stop offset="100%" stopColor="rgba(218, 201, 255, 0)" />
             </linearGradient>
-            <filter id="sky-ltc-glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="1.5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
           </defs>
-          {areaD && <path d={areaD} fill="url(#sky-ltc-gradient)" />}
-          {pathD && <path d={pathD} fill="none" stroke="rgba(230, 180, 255, 0.95)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" filter="url(#sky-ltc-glow)" />}
+          {area && <path d={area} fill="url(#market-area)" />}
+          {path && (
+            <path
+              d={path}
+              fill="none"
+              stroke="rgba(245, 239, 255, 0.96)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
         </svg>
       </div>
-      {error && <p className="sky-ltc-error">{error}</p>}
-    </div>
+      {error && <p className="market-warning">{error}</p>}
+    </article>
   )
 }
 
-const STATS = [
-  { value: 'Top 20 Asset', label: 'Litecoin market position' },
-  { value: '60%', label: 'users needing stablecoin access without selling LTC' },
-  { value: '100,000 USDC', label: 'successfully lock/minted on testnet' },
-]
-
-const MECHANISMS = [
-  {
-    title: 'Trustless Bridging',
-    text: 'zkLTC holders on LitVM leverage assets without centralized intermediaries.',
-    meta: 'zk-proof security model',
-  },
-  {
-    title: 'Modular Accounting',
-    text: 'A Core layer separated from Execution Adapters enables upgrades without liquidity migration.',
-    meta: 'Future-proof architecture',
-  },
-  {
-    title: 'Native Liquidity',
-    text: 'Circle CCTP delivers Bridged Standard USDC and avoids de-peg risks from wrapped synthetics.',
-    meta: 'Real USDC, not LUSDC',
-  },
-  {
-    title: 'Dual Settlement Verification',
-    text: 'Collateral state is verifiable with Orbit State Proofs and visible settlement flows.',
-    meta: 'Transparent verification',
-  },
-]
-
-const MILESTONES = [
-  'Testnet deployment with successful 100,000 USDC lock/mint against zkLTC.',
-  'Full Orbit State Proof implementation for oracle verification.',
-  'Recognition as a DeFi infrastructure primitive within the LitVM ecosystem.',
-]
-
-const STAKEHOLDERS = [
-  'Lead: Ayni Core Team',
-  'Strategic Partner: LitVM (Infrastructure)',
-  'Primary Users: Litecoin holders',
-  'Market Makers: Solvers and LPs providing USDC liquidity',
-]
-
-const LTC_COINS = [
-  { x: 5, y: 8, size: 31, duration: 20, delay: 0, drift: 28 },
-  { x: 18, y: 22, size: 24, duration: 16, delay: -3, drift: -22 },
-  { x: 88, y: 12, size: 35, duration: 22, delay: -5, drift: 30 },
-  { x: 12, y: 45, size: 29, duration: 18, delay: -7, drift: -18 },
-  { x: 75, y: 38, size: 33, duration: 24, delay: -2, drift: 26 },
-  { x: 42, y: 55, size: 26, duration: 17, delay: -9, drift: -24 },
-  { x: 92, y: 62, size: 31, duration: 19, delay: -4, drift: 32 },
-  { x: 8, y: 78, size: 33, duration: 21, delay: -6, drift: -20 },
-  { x: 55, y: 85, size: 37, duration: 23, delay: -1, drift: 28 },
-  { x: 28, y: 95, size: 22, duration: 15, delay: -8, drift: -16 },
-  { x: 68, y: 15, size: 29, duration: 18, delay: -10, drift: 24 },
-  { x: 35, y: 72, size: 31, duration: 20, delay: -5, drift: -26 },
-]
-
 function App() {
+  const scrollRef = useRef(null)
+  const [showDock, setShowDock] = useState(false)
+  const [dockInline, setDockInline] = useState(false)
+  const [heroPointer, setHeroPointer] = useState({
+    spotX: '56%',
+    spotY: '44%',
+    parallaxX: '0px',
+    parallaxY: '0px',
+    tiltX: '0deg',
+    tiltY: '0deg',
+    tagShiftX: '0px',
+    tagShiftY: '0px',
+  })
+
+  function handleHeroMove(event) {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = (event.clientX - rect.left) / rect.width
+    const y = (event.clientY - rect.top) / rect.height
+    const centeredX = x - 0.5
+    const centeredY = y - 0.5
+
+    startTransition(() => {
+      setHeroPointer({
+        spotX: `${(x * 100).toFixed(2)}%`,
+        spotY: `${(y * 100).toFixed(2)}%`,
+        parallaxX: `${(centeredX * 28).toFixed(2)}px`,
+        parallaxY: `${(centeredY * 22).toFixed(2)}px`,
+        tiltX: `${(-centeredY * 5).toFixed(2)}deg`,
+        tiltY: `${(centeredX * 7).toFixed(2)}deg`,
+        tagShiftX: `${(centeredX * 14).toFixed(2)}px`,
+        tagShiftY: `${(centeredY * 10).toFixed(2)}px`,
+      })
+    })
+  }
+
+  function handleHeroLeave() {
+    startTransition(() => {
+      setHeroPointer({
+        spotX: '56%',
+        spotY: '44%',
+        parallaxX: '0px',
+        parallaxY: '0px',
+        tiltX: '0deg',
+        tiltY: '0deg',
+        tagShiftX: '0px',
+        tagShiftY: '0px',
+      })
+    })
+  }
+
+  useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll('.reveal-on-scroll'))
+    if (!nodes.length) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.18, rootMargin: '0px 0px -10% 0px' }
+    )
+
+    nodes.forEach((node) => observer.observe(node))
+    return () => observer.disconnect()
+  }, [])
+
+  const scrollTargets = useMemo(
+    () => ({
+      '#overview': 'overview',
+      '#vision': 'vision',
+      '#mechanism': 'mechanism',
+      '#milestones': 'milestones',
+      '#start': 'start',
+    }),
+    []
+  )
+
+  function scrollToHash(hash) {
+    const container = scrollRef.current
+    if (!container) return
+    const id = scrollTargets[hash]
+    if (!id) return
+
+    if (id === 'overview') {
+      container.scrollTo({ top: 0, behavior: 'smooth' })
+      setShowDock(false)
+      if (typeof window !== 'undefined') window.history.replaceState(null, '', '#overview')
+      return
+    }
+
+    const el = container.querySelector(`#${id}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (typeof window !== 'undefined') window.history.replaceState(null, '', hash)
+  }
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const prevent = (e) => e.preventDefault()
+    const preventKeys = (e) => {
+      const keys = ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ']
+      if (keys.includes(e.key)) e.preventDefault()
+    }
+
+    container.addEventListener('wheel', prevent, { passive: false })
+    container.addEventListener('touchmove', prevent, { passive: false })
+    window.addEventListener('keydown', preventKeys)
+
+    return () => {
+      container.removeEventListener('wheel', prevent)
+      container.removeEventListener('touchmove', prevent)
+      window.removeEventListener('keydown', preventKeys)
+    }
+  }, [])
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const onScroll = () => {
+      const next = container.scrollTop > 80
+      setShowDock(next)
+    }
+
+    onScroll()
+    container.addEventListener('scroll', onScroll, { passive: true })
+    return () => container.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const updateShellLeft = () => {
+      const rect = container.getBoundingClientRect()
+      document.documentElement.style.setProperty('--vault-shell-left', `${rect.left}px`)
+      setDockInline(rect.left < 220)
+    }
+
+    updateShellLeft()
+    window.addEventListener('resize', updateShellLeft)
+    return () => window.removeEventListener('resize', updateShellLeft)
+  }, [])
+
   return (
-    <div className="sky">
-      <div className="sky-noise" aria-hidden />
-      <div className="sky-ltc-orbit" aria-hidden>
-        {LTC_COINS.map((coin, index) => (
-          <span
-            key={`${coin.x}-${coin.y}-${index}`}
-            className="sky-ltc-coin"
-            style={{
-              '--x': `${coin.x}%`,
-              '--y': `${coin.y}%`,
-              '--size': `${coin.size}px`,
-              '--duration': `${coin.duration}s`,
-              '--delay': `${coin.delay}s`,
-              '--drift': `${coin.drift}px`,
-            }}
-          >
-            Ł
-          </span>
-        ))}
-      </div>
+    <div className="vault-page">
+      <main className="vault-shell vault-scroll" ref={scrollRef}>
+        <section
+          className="hero-stage"
+          id="overview"
+          onMouseMove={handleHeroMove}
+          onMouseLeave={handleHeroLeave}
+          style={{
+            '--spot-x': heroPointer.spotX,
+            '--spot-y': heroPointer.spotY,
+            '--parallax-x': heroPointer.parallaxX,
+            '--parallax-y': heroPointer.parallaxY,
+            '--tilt-x': heroPointer.tiltX,
+            '--tilt-y': heroPointer.tiltY,
+            '--tag-shift-x': heroPointer.tagShiftX,
+            '--tag-shift-y': heroPointer.tagShiftY,
+          }}
+        >
+          <a className="hero-brand" href="#overview">
+            <span className="hero-brand-mark" aria-hidden>
+              A
+            </span>
+            Ayni Protocol
+          </a>
 
-      <header className="sky-nav">
-        <a href="#overview" className="sky-brand" aria-label="Ayni Protocol home">
-          <span className="sky-brand-dot" aria-hidden />
-          Ayni Protocol
-        </a>
-        <nav className="sky-nav-links" aria-label="Main">
-          <a href="#mechanism">Mechanism</a>
-        </nav>
-        <a href="#start" className="sky-nav-cta">
-          Launch dApp
-        </a>
-      </header>
+          <nav className="hero-rail" aria-label="Primary">
+            {HERO_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(e) => {
+                  e.preventDefault()
+                  scrollToHash(link.href)
+                }}
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
 
-      <main className="sky-main">
-        <section className="sky-hero" id="overview">
-          <div className="sky-hero-copy">
-            <p className="sky-kicker">Ayni means reciprocity</p>
-            <h1 className="sky-title">Unlocking the Dormant Liquidity of the Litecoin Ecosystem.</h1>
-            <p className="sky-subtitle">
-              Ayni is the first modular, trustless, cross-chain CDP engine focused on bridging Litecoin security with
-              Ethereum-family DeFi utility.
+          <div className="hero-copy">
+            <p className="hero-kicker">Unlocking Dormant Litecoin Liquidity.</p>
+            <h1 className="hero-title">The Architecture of Litecoin Value</h1>
+            <p className="hero-subtitle">
+              A trustless path from zkLTC collateral to native USDC on LitVM.
             </p>
-            <div className="sky-actions">
-              <a href="#mechanism" className="sky-btn sky-btn-primary">
-                Read mechanism
+            <div className="hero-actions">
+              <a
+                className="hero-action-primary"
+                href="#mechanism"
+                onClick={(e) => {
+                  e.preventDefault()
+                  scrollToHash('#mechanism')
+                }}
+              >
+                Explore Mechanism
               </a>
-              <a href="#start" className="sky-btn sky-btn-secondary">
-                Open Ayni
+              <a
+                className="hero-action-secondary"
+                href="#vision"
+                onClick={(e) => {
+                  e.preventDefault()
+                  scrollToHash('#vision')
+                }}
+              >
+                Why Ayni
               </a>
             </div>
-            <ul className="sky-stats" aria-label="Ayni highlights">
-              {STATS.map((stat) => (
-                <li key={stat.label}>
-                  <strong>{stat.value}</strong>
-                  <span>{stat.label}</span>
-                </li>
+            <div className="hero-signal-grid">
+              {HIGHLIGHTS.map((item) => (
+                <div key={item} className="hero-signal-card">
+                  {item}
+                </div>
               ))}
-            </ul>
-          </div>
-
-          <div className="sky-hero-media" aria-hidden>
-            <div className="sky-media-frame sky-media-frame-large sky-ltc-panel">
-              <LtcPriceChart />
             </div>
-            <div className="sky-media-grid">
-              <div className="sky-media-frame sky-visual-panel sky-visual-panel-small">
-                <div className="sky-bar-chart" />
-              </div>
-              <div className="sky-media-frame sky-media-chip">
-                <p>Primary goal</p>
-                <strong>LTC as productive collateral</strong>
-                <span>without forced selling</span>
-              </div>
+            <div className="hero-stat-list">
+              {HERO_STATS.map((item) => (
+                <div key={item.label} className="hero-stat">
+                  <strong>{item.value}</strong>
+                  <span>{item.label}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </section>
 
-        <section className="sky-section" id="mechanism">
-          <header className="sky-section-head">
-            <p className="sky-section-kicker">Core Mechanism</p>
-            <h2 className="sky-section-title">Trustless bridging, modular execution, native USDC.</h2>
-          </header>
+          <div className="hero-visual">
+            <div className="hero-grid" aria-hidden />
 
-          <div className="sky-feature-grid">
-            {MECHANISMS.map((feature, index) => (
-              <article key={feature.title} className="sky-feature-card" style={{ '--delay': `${index * 90}ms` }}>
-                <h3>{feature.title}</h3>
-                <p>{feature.text}</p>
-                <span>{feature.meta}</span>
-              </article>
+            <div className="hero-stars" aria-hidden>
+              {HERO_STARS.map((star, index) => (
+                <span
+                  key={`${star.x}-${star.y}-${index}`}
+                  style={{
+                    '--x': star.x,
+                    '--y': star.y,
+                    '--size': star.size,
+                    '--delay': star.delay,
+                    '--duration': star.duration,
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="particle-sculpture" aria-hidden>
+              {PARTICLES.map((particle, index) => (
+                <span
+                  key={index}
+                  className="particle-node"
+                  style={{
+                    '--x': particle.x,
+                    '--y': particle.y,
+                    '--scale': particle.scale,
+                    '--opacity': particle.opacity,
+                    '--blur': particle.blur,
+                    '--glow': particle.glow,
+                    '--delay': particle.delay,
+                  }}
+                />
+              ))}
+            </div>
+
+            {FLOATING_TAGS.map((tag) => (
+              <div
+                key={tag.label}
+                className="floating-tag"
+                style={{
+                  '--x': tag.x,
+                  '--y': tag.y,
+                }}
+              >
+                {tag.label}
+              </div>
             ))}
           </div>
-        </section>
 
-        <section className="sky-section sky-ops" id="progress">
-          <div className="sky-ops-card">
-            <p className="sky-section-kicker">Success Milestones</p>
-            <ul>
-              {MILESTONES.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="sky-ops-card">
-            <p className="sky-section-kicker">Stakeholders</p>
-            <ul>
-              {STAKEHOLDERS.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="sky-cta" id="start">
-          <p className="sky-section-kicker">Ayni Protocol</p>
-          <h2>Bridging Security and Utility through Reciprocity.</h2>
-          <p>Positioning Circle standard USDC distribution on LitVM with solver-optimized liquidity.</p>
-          <a href="#overview" className="sky-btn sky-btn-primary">
-            Launch Ayni
+          <a
+            className="hero-cta"
+            href="#start"
+            onClick={(e) => {
+              e.preventDefault()
+              scrollToHash('#start')
+            }}
+          >
+            Get Started
           </a>
         </section>
-      </main>
 
-      <footer className="sky-footer">
-        <p>Ayni Protocol landing • LiteVM ecosystem CDP infrastructure</p>
-      </footer>
+        <section className="landing-section landing-row intro-band reveal-on-scroll" id="vision" style={{ '--index': 0 }}>
+          <div className="section-heading compact">
+            <p className="section-label">Why Ayni</p>
+            <h2>Litecoin liquidity, rebuilt as a trustless product.</h2>
+            <p>Three simple truths explain the whole pitch.</p>
+            <div className="vision-market">
+              <LtcPriceChart />
+            </div>
+          </div>
+          <div className="section-canvas">
+            <div className="story-grid">
+              {CONTEXT_CARDS.map((card, index) => (
+                <article key={card.title} className="story-card reveal-on-scroll" style={{ '--index': index }}>
+                  <span className="story-card-chip">{card.title}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section composition-section" id="mechanism">
+          <div className="composition-intro reveal-on-scroll" style={{ '--index': 0 }}>
+            <p className="section-label">Protocol Flow</p>
+          </div>
+
+          <div className="composition-band reveal-on-scroll" style={{ '--index': 1 }}>
+            <div className="composition-band-head">
+              <p className="section-label">How It Works</p>
+              <h3>Three moves turn dormant LTC into productive liquidity.</h3>
+            </div>
+            <div className="composition-grid composition-grid-three">
+              {MECHANISM.map((item, index) => (
+                <article key={item.title} className="feature-card composition-card reveal-on-scroll" style={{ '--index': index }}>
+                  <span className="feature-step">0{index + 1}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="composition-band reveal-on-scroll" id="milestones" style={{ '--index': 2 }}>
+            <div className="composition-band-head">
+              <p className="section-label">Why It Wins</p>
+              <h3>Native USDC, visible collateral, solver efficiency.</h3>
+            </div>
+            <div className="composition-grid composition-grid-three">
+              {WIN_CARDS.slice(0, 3).map((item, index) => (
+                <article key={item.title} className="story-card cute-card composition-card reveal-on-scroll" style={{ '--index': index }}>
+                  <span className="cute-card-label">{item.label}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="composition-summary-row">
+            <article className="content-panel composition-summary-panel reveal-on-scroll" style={{ '--index': 0 }}>
+              <p className="section-label">Milestones</p>
+              <h3>Already proving the route.</h3>
+              <div className="summary-list">
+                {MILESTONES.map((item, index) => (
+                  <div key={item} className="summary-item">
+                    <span>0{index + 1}</span>
+                    <p>{item}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className="content-panel composition-summary-panel reveal-on-scroll" style={{ '--index': 1 }}>
+              <p className="section-label">Built For</p>
+              <h3>The people around the flow.</h3>
+              <div className="stakeholder-chip-grid">
+                {STAKEHOLDERS.map((item) => {
+                  const [title, body] = item.split(': ')
+
+                  return (
+                    <div key={item} className="stakeholder-chip">
+                      <strong>{title}</strong>
+                      <span>{body ?? item}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className="landing-section final-cta" id="start">
+          <article className="content-panel cta-panel reveal-on-scroll" style={{ '--index': 0 }}>
+            <div>
+              <p className="section-label">Ayni Protocol</p>
+              <h3>Bridging security and utility through reciprocity.</h3>
+              <p className="cta-copy">
+                Give Litecoin holders a trustless route into productive USDC liquidity without forcing them out of LTC.
+              </p>
+            </div>
+            <a
+              href="#overview"
+              onClick={(e) => {
+                e.preventDefault()
+                scrollToHash('#overview')
+              }}
+            >
+              Launch dApp
+            </a>
+          </article>
+        </section>
+        <nav className={`vault-dock ${showDock ? 'is-visible' : ''} ${dockInline ? 'is-inline' : ''}`} aria-label="Section navigation">
+          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#overview')}>
+            Home
+          </button>
+          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#vision')}>
+            Vision
+          </button>
+          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#mechanism')}>
+            Mechanism
+          </button>
+          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#milestones')}>
+            Milestones
+          </button>
+          <button type="button" className="vault-dock-btn vault-dock-btn-primary" onClick={() => scrollToHash('#start')}>
+            Get Started
+          </button>
+        </nav>
+      </main>
     </div>
   )
 }
