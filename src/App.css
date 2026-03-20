@@ -1155,27 +1155,18 @@
     padding: 0 18px;
   }
 
-  .hero-stage {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-    padding: 22px 18px 28px;
-    gap: 18px;
-    min-height: unset;
-  }
-
-  .hero-brand {
-    grid-column: 1;
-  }
-
-  .hero-rail {
-    grid-column: 1;
-    padding-right: 0;
+  .vision-market {
+    width: 100%;
   }
 }
 
 @media (max-width: 720px) {
   .vault-shell {
     padding: 0 14px;
+  }
+
+  .vault-scroll {
+    padding-bottom: 148px;
   }
 
   .cta-panel {
@@ -1315,7 +1306,7 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (min-width: 821px) and (max-width: 1100px) {
   .composition-intro,
   .composition-band-head {
     max-width: 760px;
@@ -1336,29 +1327,71 @@
   }
 
   .hero-stage {
-    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
     min-height: auto;
+    gap: 18px;
+    padding: 22px 18px 28px;
   }
 
   .hero-title {
-    font-size: clamp(3rem, 5.8vw, 4.8rem);
+    max-width: 6.8ch;
+    font-size: clamp(3rem, 6vw, 4.6rem);
+  }
+
+  .hero-brand {
+    grid-column: 1;
+    grid-row: 1;
+    max-width: calc(100% - 180px);
   }
 
   .hero-rail {
-    padding-right: 120px;
+    grid-column: 1;
+    grid-row: 2;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 12px;
+    padding-right: 0;
+    overflow: visible;
+  }
+
+  .hero-copy {
+    grid-column: 1;
+    grid-row: 3;
+    align-content: start;
+    padding: 0;
+  }
+
+  .hero-visual {
+    grid-column: 1;
+    grid-row: 4;
+    min-height: 500px;
+    perspective: none;
+    padding: 8px 0 0;
+  }
+
+  .hero-cta {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
   }
 
   .particle-sculpture {
-    width: min(58vw, 520px);
-    height: min(58vw, 520px);
+    width: min(74vw, 520px);
+    height: min(74vw, 520px);
+    inset: 46% auto auto 50%;
   }
 
   .hero-signal-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-top: 18px;
   }
 
-  .hero-stat-list,
+  .hero-stat-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .cute-grid,
   .strategy-row,
   .end-grid {
@@ -1449,27 +1482,34 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto;
     gap: 16px;
-    padding: 18px;
+    padding: 18px 16px 24px;
   }
 
   .hero-brand {
     grid-column: 1;
     grid-row: 1;
+    gap: 8px;
+    font-size: 0.8rem;
+    max-width: calc(100% - 126px);
   }
 
   .hero-rail {
     grid-column: 1;
     grid-row: 2;
     flex-direction: row;
+    flex-wrap: nowrap;
     justify-content: flex-start;
     gap: 12px;
     padding-bottom: 0;
     padding-right: 0;
     overflow-x: auto;
+    scrollbar-width: none;
   }
 
   .hero-rail a {
     white-space: nowrap;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
   }
 
   .hero-copy {
@@ -1480,44 +1520,57 @@
   }
 
   .hero-title {
-    font-size: clamp(2.7rem, 10vw, 4rem);
+    max-width: 6.2ch;
+    font-size: clamp(2.55rem, 14vw, 3.9rem);
+    line-height: 0.96;
   }
 
   .hero-subtitle {
     max-height: none;
     margin-top: 10px;
+    max-width: 28ch;
+    font-size: 0.9rem;
+  }
+
+  .hero-actions {
+    width: 100%;
+  }
+
+  .hero-action-primary,
+  .hero-action-secondary {
+    flex: 1 1 calc(50% - 5px);
+    min-height: 44px;
+  }
+
+  .hero-signal-grid {
+    grid-template-columns: 1fr;
   }
 
   .hero-stat-list {
+    grid-template-columns: 1fr;
     margin-top: 12px;
+  }
+
+  .hero-stat {
+    min-height: 0;
   }
 
   .hero-visual {
     grid-column: 1;
     grid-row: 4;
-    min-height: 520px;
+    min-height: 420px;
     perspective: none;
+    padding: 0;
   }
 
   .particle-sculpture {
-    width: min(86vw, 460px);
-    height: min(86vw, 460px);
-    inset: 44% auto auto 50%;
+    width: min(94vw, 400px);
+    height: min(94vw, 400px);
+    inset: 46% auto auto 50%;
   }
 
-  .hero-note,
-  .hero-market {
-    position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    width: auto;
-    margin-top: 16px;
-  }
-
-  .hero-market {
-    margin-top: 12px;
-    transform: none;
+  .floating-tag {
+    display: none;
   }
 
   .hero-cta {
@@ -1525,7 +1578,8 @@
     grid-row: 1;
     justify-self: end;
     align-self: start;
-    padding: 12px 16px;
+    padding: 10px 14px;
+    font-size: 0.84rem;
   }
 
   .hero-stage::after {
@@ -1560,8 +1614,59 @@
   .story-strip,
   .content-grid,
   .landing-section {
-    padding-left: 18px;
-    padding-right: 18px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .vault-shell {
+    padding: 0 12px;
+  }
+
+  .hero-stage {
+    padding: 16px 14px 22px;
+    gap: 14px;
+  }
+
+  .hero-brand {
+    font-size: 0.74rem;
+  }
+
+  .hero-brand-mark {
+    width: 22px;
+    height: 22px;
+  }
+
+  .hero-rail {
+    gap: 10px;
+  }
+
+  .hero-title {
+    font-size: clamp(2.2rem, 15vw, 3.1rem);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .hero-action-primary,
+  .hero-action-secondary {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .hero-visual {
+    min-height: 340px;
+  }
+
+  .particle-sculpture {
+    width: min(92vw, 330px);
+    height: min(92vw, 330px);
+  }
+
+  .market-card {
+    padding: 14px;
   }
 }
 
