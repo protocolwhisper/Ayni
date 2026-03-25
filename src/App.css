@@ -2,6 +2,7 @@
   min-height: 100vh;
   padding: 0;
   background: linear-gradient(180deg, #090a13 0%, #04050a 100%);
+  overflow-x: clip;
 }
 
 .vault-shell {
@@ -21,123 +22,19 @@
 .vault-scroll {
   height: 100dvh;
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: none;
   scroll-behavior: smooth;
   scroll-padding-top: 0;
+  scroll-snap-type: y proximity;
   scrollbar-width: none;
-  padding-bottom: 110px;
+  padding-bottom: 40px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .vault-scroll::-webkit-scrollbar {
   width: 0;
   height: 0;
-}
-
-.vault-dock {
-  position: fixed;
-  top: 50%;
-  z-index: 20;
-  margin: 0;
-  width: fit-content;
-  max-width: calc(100% - 12px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(237, 232, 245, 0.14);
-  background:
-    radial-gradient(140% 140% at 20% 0%, rgba(170, 140, 235, 0.08), rgba(170, 140, 235, 0) 56%),
-    rgba(9, 9, 17, 0.28);
-  backdrop-filter: blur(6px);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-  opacity: 0;
-  transform: translate3d(0, -50%, 0);
-  pointer-events: none;
-  transition: opacity 220ms ease, transform 220ms ease;
-}
-
-.vault-dock.is-visible {
-  opacity: 1;
-  transform: translate3d(0, -50%, 0);
-  pointer-events: auto;
-}
-
-.vault-dock {
-  /* place it in the left gutter (outside centered shell) */
-  --dock-w: 152px;
-  left: max(10px, calc(var(--vault-shell-left, 18px) - var(--dock-w) - 28px));
-}
-
-.vault-dock-btn {
-  border-radius: 999px;
-  border: 1px solid rgba(237, 232, 245, 0.16);
-  padding: 8px 10px;
-  font-family: var(--sky-display);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(247, 243, 255, 0.9);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-  cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-  min-width: 132px;
-  text-align: left;
-}
-
-.vault-dock-btn:hover {
-  transform: translateY(-1px);
-  border-color: rgba(220, 204, 255, 0.45);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-}
-
-.vault-dock-btn-primary {
-  color: #17111f;
-  border-color: rgba(237, 232, 245, 0.4);
-  background: linear-gradient(145deg, #f0e8ff, #c6a9ff);
-}
-
-.vault-dock-btn:focus-visible {
-  outline: 2px solid rgba(220, 204, 255, 0.55);
-  outline-offset: 2px;
-}
-
-.vault-dock.is-inline {
-  top: auto;
-  left: 50%;
-  bottom: 14px;
-  width: min(760px, calc(100vw - 24px));
-  max-width: calc(100vw - 24px);
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  padding: 10px;
-  border-radius: 18px;
-  transform: translate3d(-50%, 10px, 0);
-}
-
-.vault-dock.is-inline.is-visible {
-  transform: translate3d(-50%, 0, 0);
-}
-
-.vault-dock.is-inline .vault-dock-btn {
-  min-width: 0;
-  padding: 10px 12px;
-  text-align: center;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-}
-
-@media (max-width: 720px) {
-  .vault-dock.is-inline {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .vault-dock.is-inline .vault-dock-btn-primary {
-    grid-column: 1 / -1;
-  }
 }
 
 .hero-stage {
@@ -160,6 +57,7 @@
     radial-gradient(circle at 52% 48%, rgba(136, 111, 207, 0.18), rgba(136, 111, 207, 0) 28%),
     linear-gradient(180deg, rgba(8, 9, 17, 0.96), rgba(7, 8, 16, 0.98));
   transition: background 180ms ease;
+  scroll-snap-align: start;
 }
 
 .hero-stage::before {
@@ -501,7 +399,7 @@
 
 .vision-market {
   margin-top: 18px;
-  width: min(360px, 100%);
+  width: 100%;
 }
 
 .vision-market .market-card {
@@ -552,6 +450,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-top: 14px;
+  width: 100%;
   max-width: 100%;
   margin-left: 0;
   margin-right: 0;
@@ -559,6 +458,7 @@
 
 .landing-section {
   padding: 0 0 20px;
+  scroll-snap-align: start;
 }
 
 .landing-row {
@@ -574,10 +474,24 @@
 .landing-row .section-heading {
   max-width: 340px;
   padding-top: 6px;
+  min-width: 0;
 }
 
 .landing-row .section-canvas {
   width: 100%;
+  min-width: 0;
+}
+
+.vision-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.vision-layout .story-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
 }
 
 .landing-row .story-grid,
@@ -601,6 +515,7 @@
   max-width: 100%;
   margin: 0;
   padding-top: 12px;
+  scroll-snap-align: start;
 }
 
 /* Scroll reveal (apply .reveal-on-scroll + .is-visible in JS) */
@@ -771,6 +686,7 @@
   justify-content: flex-start;
   padding: 16px;
   min-height: 156px;
+  min-width: 0;
   animation: revealUp 0.8s ease both;
   animation-delay: calc(var(--index) * 0.08s);
   background:
@@ -799,6 +715,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(223, 215, 240, 0.76);
+  white-space: nowrap;
 }
 
 .story-card p {
@@ -1155,6 +1072,24 @@
     padding: 0 18px;
   }
 
+  .landing-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .landing-row .section-heading {
+    max-width: none;
+    padding-top: 0;
+  }
+
+  .vision-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .vision-layout .story-grid {
+    grid-template-columns: 1fr;
+  }
+
   .vision-market {
     width: 100%;
   }
@@ -1185,7 +1120,7 @@
 }
 
 .market-card {
-  padding: 16px;
+  padding: 22px;
   border-radius: 18px;
   border: 1px solid rgba(230, 224, 241, 0.12);
   background:
@@ -1220,15 +1155,15 @@
 }
 
 .market-price {
-  margin: 12px 0 10px;
+  margin: 14px 0 14px;
   font-family: var(--sky-display);
-  font-size: 1.65rem;
+  font-size: 2.15rem;
   font-weight: 400;
   color: rgba(247, 243, 252, 0.97);
 }
 
 .market-chart-wrap {
-  height: 80px;
+  height: 124px;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(223, 215, 240, 0.08);
@@ -1451,6 +1386,24 @@
 }
 
 @media (max-width: 820px) {
+  .landing-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .landing-row .section-heading {
+    max-width: none;
+    padding-top: 0;
+  }
+
+  .vision-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .vision-layout .story-grid {
+    grid-template-columns: 1fr;
+  }
+
   .composition-intro h2 {
     font-size: clamp(1.9rem, 8vw, 2.6rem);
   }
