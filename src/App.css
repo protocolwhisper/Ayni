@@ -1386,6 +1386,16 @@
 }
 
 @media (max-width: 820px) {
+  .vault-scroll {
+    scroll-snap-type: none;
+  }
+
+  .hero-stage,
+  .landing-section,
+  .composition-section {
+    scroll-snap-align: none;
+  }
+
   .landing-row {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1514,12 +1524,37 @@
     min-height: 420px;
     perspective: none;
     padding: 0;
+    contain: layout paint;
   }
 
   .particle-sculpture {
     width: min(94vw, 400px);
     height: min(94vw, 400px);
     inset: 46% auto auto 50%;
+    animation: none;
+    transition: none;
+    transform: translate(-50%, -50%);
+  }
+
+  .particle-sculpture::before {
+    filter: blur(14px);
+    opacity: 0.7;
+  }
+
+  .particle-node {
+    width: 11px;
+    height: 11px;
+    filter: none;
+    box-shadow: 0 0 calc(12px * var(--glow)) rgba(230, 214, 255, 0.55);
+    animation-duration: 8.5s;
+  }
+
+  .particle-node:nth-child(2n) {
+    display: none;
+  }
+
+  .hero-stars span:nth-child(2n) {
+    display: none;
   }
 
   .floating-tag {
@@ -1610,12 +1645,12 @@
   }
 
   .hero-visual {
-    min-height: 340px;
+    min-height: 300px;
   }
 
   .particle-sculpture {
-    width: min(92vw, 330px);
-    height: min(92vw, 330px);
+    width: min(88vw, 300px);
+    height: min(88vw, 300px);
   }
 
   .market-card {
