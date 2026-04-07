@@ -574,10 +574,10 @@ function App() {
 
           <a
             className="hero-cta"
-            href="#start"
+            href="/dashboard"
             onClick={(e) => {
               e.preventDefault()
-              scrollToHash('#start')
+              if (typeof window !== 'undefined') window.location.assign('/dashboard')
             }}
           >
             Get Started
@@ -688,10 +688,10 @@ function App() {
               </p>
             </div>
             <a
-              href="#overview"
+              href="/dashboard"
               onClick={(e) => {
                 e.preventDefault()
-                scrollToHash('#overview')
+                if (typeof window !== 'undefined') window.location.assign('/dashboard')
               }}
             >
               Launch dApp
