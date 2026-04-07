@@ -35,16 +35,16 @@
 .dashboard-shell {
   position: relative;
   z-index: 1;
-  width: min(1660px, calc(100vw - 80px));
+  width: min(1480px, calc(100vw - 64px));
   margin: 0 auto;
-  padding: 32px 0 64px;
+  padding: 24px 0 52px;
 }
 
 .dashboard-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 18px;
-  margin-bottom: 36px;
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
 .dashboard-button,
@@ -66,14 +66,26 @@
 }
 
 .dashboard-button {
-  min-height: 62px;
-  padding: 0 28px;
+  min-height: 56px;
+  padding: 0 24px;
   border-radius: 999px;
   color: var(--text);
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
     background 180ms ease;
+}
+
+.dashboard-button:disabled {
+  cursor: progress;
+  opacity: 0.8;
+  transform: none;
+}
+
+.wallet-status {
+  margin: 0 0 18px;
+  color: #b7c8ff;
+  font-size: 0.98rem;
 }
 
 .dashboard-button:hover,
@@ -111,7 +123,7 @@
 .bridge-modal,
 .bridge-info-card {
   border: 1px solid var(--border);
-  border-radius: 30px;
+  border-radius: 26px;
   background: linear-gradient(180deg, rgba(20, 24, 37, 0.98), rgba(16, 20, 32, 0.98));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
@@ -119,7 +131,7 @@
 }
 
 .dashboard-balance-card {
-  padding: 34px 34px 0;
+  padding: 28px 28px 0;
 }
 
 .balance-header {
@@ -144,36 +156,36 @@
 .section-label,
 .tvl-pill span,
 .swap-label {
-  font-size: 0.9rem;
+  font-size: 0.78rem;
 }
 
 .balance-header h1 {
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   font-family: var(--sky-display);
-  font-size: clamp(6rem, 12vw, 8rem);
+  font-size: clamp(4.8rem, 9vw, 6.4rem);
   line-height: 0.86;
   font-weight: 400;
 }
 
 .tvl-pill {
-  min-width: 280px;
-  padding: 26px 24px;
-  border-radius: 26px;
+  min-width: 240px;
+  padding: 22px 20px;
+  border-radius: 22px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .tvl-pill strong {
   display: block;
-  margin-top: 16px;
+  margin-top: 12px;
   font-family: var(--sky-display);
-  font-size: 3.2rem;
+  font-size: 2.6rem;
   font-weight: 400;
 }
 
 .balance-divider {
-  height: 260px;
-  margin-top: 28px;
+  height: 200px;
+  margin-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0)),
@@ -183,9 +195,9 @@
 .balance-stats-row {
   display: grid;
   grid-template-columns: 1.2fr auto 1fr auto;
-  gap: 24px;
+  gap: 18px;
   align-items: center;
-  padding: 28px 0 30px;
+  padding: 22px 0 24px;
 }
 
 .stat-group,
@@ -200,8 +212,8 @@
 }
 
 .stat-icon {
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -211,8 +223,8 @@
 
 .stat-group strong {
   display: block;
-  margin-top: 8px;
-  font-size: 1.35rem;
+  margin-top: 6px;
+  font-size: 1.15rem;
 }
 
 .stat-group small {
@@ -222,8 +234,8 @@
 
 .soft-pill,
 .filter-pill {
-  min-height: 52px;
-  padding: 0 22px;
+  min-height: 46px;
+  padding: 0 18px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -234,13 +246,13 @@
 
 .promo-stack {
   display: grid;
-  gap: 24px;
-  margin-top: 30px;
+  gap: 18px;
+  margin-top: 24px;
 }
 
 .promo-card {
-  min-height: 132px;
-  padding: 28px 32px;
+  min-height: 116px;
+  padding: 22px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -262,30 +274,30 @@
 }
 
 .promo-icon {
-  width: 60px;
-  height: 60px;
+  width: 52px;
+  height: 52px;
   border-radius: 18px;
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.08);
-  font-size: 1.4rem;
+  font-size: 1.2rem;
 }
 
 .promo-copy h2 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.72rem;
   font-weight: 600;
 }
 
 .promo-copy p {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: 0.98rem;
 }
 
 .promo-button {
-  min-height: 58px;
-  padding: 0 28px;
+  min-height: 50px;
+  padding: 0 22px;
   border-radius: 999px;
   background: #f4f4f7;
   color: #101522;
@@ -294,12 +306,12 @@
 }
 
 .vaults-card {
-  margin-top: 32px;
+  margin-top: 24px;
   overflow: hidden;
 }
 
 .vaults-top {
-  padding: 28px 30px;
+  padding: 22px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -317,9 +329,9 @@
 
 .tab-pill,
 .view-pill {
-  min-height: 54px;
-  min-width: 54px;
-  padding: 0 24px;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0 20px;
   border-radius: 999px;
   color: var(--muted);
   background: transparent;
@@ -332,7 +344,7 @@
 }
 
 .vaults-filters {
-  padding: 28px 30px;
+  padding: 22px 24px;
   display: flex;
   gap: 34px;
   border-top: 1px solid var(--border);
@@ -355,7 +367,7 @@
   grid-template-columns: minmax(260px, 2.2fr) minmax(160px, 1fr) 0.7fr 1fr 0.9fr;
   gap: 20px;
   align-items: center;
-  padding: 24px 30px;
+  padding: 18px 24px;
 }
 
 .vault-table-head {
@@ -401,21 +413,21 @@
 }
 
 .vault-empty {
-  padding: 40px 30px 48px;
+  padding: 28px 24px 34px;
   display: flex;
   justify-content: center;
   border-top: 1px solid var(--border);
 }
 
 .coming-soon-card {
-  margin-top: 28px;
-  min-height: 112px;
+  margin-top: 22px;
+  min-height: 86px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
   color: var(--muted);
-  font-size: 1.7rem;
+  font-size: 1.2rem;
 }
 
 .coming-soon-icon {
@@ -441,9 +453,9 @@
 .bridge-modal {
   position: relative;
   z-index: 1;
-  width: min(600px, calc(100vw - 28px));
-  padding: 22px;
-  border-radius: 28px;
+  width: min(560px, calc(100vw - 28px));
+  padding: 20px;
+  border-radius: 24px;
 }
 
 .bridge-modal-header {
@@ -479,8 +491,8 @@
 }
 
 .icon-pill {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: 999px;
   color: var(--text);
   background: rgba(255, 255, 255, 0.07);
@@ -488,9 +500,9 @@
 
 .swap-box {
   position: relative;
-  margin-top: 18px;
-  padding: 18px 20px 16px;
-  border-radius: 22px;
+  margin-top: 16px;
+  padding: 16px 18px 14px;
+  border-radius: 20px;
   background: #1b2030;
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -504,12 +516,12 @@
 }
 
 .swap-amount-row strong {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 600;
 }
 
 .token-pill {
-  min-height: 60px;
+  min-height: 52px;
   padding: 0 18px 0 12px;
   border-radius: 999px;
   display: inline-flex;
@@ -519,8 +531,8 @@
 }
 
 .token-badge {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -567,8 +579,8 @@
 
 .bridge-info-card {
   width: 100%;
-  margin-top: 16px;
-  padding: 18px 20px;
+  margin-top: 14px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -612,7 +624,7 @@
 
 @media (max-width: 1100px) {
   .dashboard-shell {
-    width: calc(100vw - 28px);
+    width: calc(100vw - 24px);
   }
 
   .balance-stats-row {

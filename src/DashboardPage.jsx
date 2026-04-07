@@ -1,6 +1,17 @@
 import { useState } from 'react'
 import './DashboardPage.css'
 
+const LITEFORGE_CHAIN = {
+  chainId: '0x1159',
+  chainName: 'LiteForge',
+  nativeCurrency: {
+    name: 'zkLTC',
+    symbol: 'zkLTC',
+    decimals: 18,
+  },
+  rpcUrls: ['https://liteforge.rpc.caldera.xyz/http'],
+}
+
 const vaults = [
   {
     name: 'Ayni Prime USDC',
@@ -50,6 +61,53 @@ const promos = [
 
 function DashboardPage() {
   const [isBridgeOpen, setIsBridgeOpen] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [walletStatus, setWalletStatus] = useState('')
+
+  async function handleConnectWallet() {
+    if (typeof window === 'undefined' || !window.ethereum?.request) {
+      setWalletStatus('No compatible wallet was detected.')
+      return
+    }
+
+    setIsConnecting(true)
+    setWalletStatus('')
+
+    try {
+      await window.ethereum.request({ method: 'eth_requestAccounts' })
+
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: LITEFORGE_CHAIN.chainId }],
+        })
+      } catch (switchError) {
+        const missingChain =
+          switchError?.code === 4902 ||
+          /unrecognized chain|unknown chain|not added/i.test(String(switchError?.message || ''))
+
+        if (!missingChain) throw switchError
+
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [LITEFORGE_CHAIN],
+        })
+
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: LITEFORGE_CHAIN.chainId }],
+        })
+      }
+
+      setWalletStatus('Wallet connected to LiteForge.')
+      setIsBridgeOpen(false)
+    } catch (error) {
+      const rejected = error?.code === 4001
+      setWalletStatus(rejected ? 'Wallet connection was cancelled.' : 'Unable to connect wallet to LiteForge.')
+    } finally {
+      setIsConnecting(false)
+    }
+  }
 
   return (
     <>
@@ -63,10 +121,17 @@ function DashboardPage() {
             >
               Swap + Bridge
             </button>
-            <button type="button" className="dashboard-button dashboard-button-ghost">
-              Connect Wallet
+            <button
+              type="button"
+              className="dashboard-button dashboard-button-ghost"
+              onClick={handleConnectWallet}
+              disabled={isConnecting}
+            >
+              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
           </section>
+
+          {walletStatus ? <p className="wallet-status">{walletStatus}</p> : null}
 
           <section className="dashboard-balance-card">
             <div className="balance-header">
@@ -202,8 +267,13 @@ function DashboardPage() {
             </div>
 
             <div className="vault-empty">
-              <button type="button" className="dashboard-button dashboard-button-ghost">
-                Connect Wallet
+              <button
+                type="button"
+                className="dashboard-button dashboard-button-ghost"
+                onClick={handleConnectWallet}
+                disabled={isConnecting}
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
               </button>
             </div>
           </section>
@@ -275,8 +345,13 @@ function DashboardPage() {
               </div>
             </div>
 
-            <button type="button" className="dashboard-button dashboard-button-blue bridge-connect-button">
-              Connect Wallet
+            <button
+              type="button"
+              className="dashboard-button dashboard-button-blue bridge-connect-button"
+              onClick={handleConnectWallet}
+              disabled={isConnecting}
+            >
+              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
 
             <button type="button" className="bridge-info-card">
