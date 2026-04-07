@@ -1,23 +1,5 @@
+import { useState } from 'react'
 import './DashboardPage.css'
-
-const assetOptions = ['ETH', 'USDC', 'USDT']
-
-const featureCards = [
-  {
-    icon: '✦',
-    title: 'Deposit and earn yield on your assets',
-    body: 'Bridge in and route capital straight into curated USDC strategies from the dashboard.',
-    cta: 'How it works',
-    accent: 'feature-card feature-card-primary',
-  },
-  {
-    icon: '◫',
-    title: 'Bridge is integrated directly into deposits',
-    body: 'Enable bridge access, receive USDC, and continue directly into vault deposits without leaving this screen.',
-    cta: 'Open bridge',
-    accent: 'feature-card feature-card-secondary',
-  },
-]
 
 const vaults = [
   {
@@ -47,206 +29,268 @@ const vaults = [
     exposure: 'USDC / Basis',
     curator: 'Gauntlet',
   },
+]
+
+const promos = [
   {
-    name: 'Instant Access Pool',
-    tag: 'Fast Exit',
-    deposits: '$12.4M',
-    asset: 'USDC',
-    apy: '3.94%',
-    exposure: 'USDC',
-    curator: 'Ayni',
+    icon: '✦',
+    title: 'Deposit and earn yield on your assets',
+    body: 'Bridge in, get USDC, and route deposits directly into curated earning strategies.',
+    cta: 'How it works',
+    tone: 'promo-card promo-card-blue',
+  },
+  {
+    icon: '⇄',
+    title: 'Bridge access is enabled inside the dashboard',
+    body: 'Use Swap + Bridge when you need funds in, then return straight to deposits and positions.',
+    cta: 'Enable bridge',
+    tone: 'promo-card promo-card-violet',
   },
 ]
 
 function DashboardPage() {
+  const [isBridgeOpen, setIsBridgeOpen] = useState(false)
+
   return (
-    <main className="dashboard-page">
-      <div className="dashboard-shell">
-        <section className="dashboard-actions">
-          <button type="button" className="dashboard-button dashboard-button-primary">
-            Deposit + Bridge
-          </button>
-          <button type="button" className="dashboard-button dashboard-button-ghost">
-            Connect wallet
-          </button>
-        </section>
+    <>
+      <main className={`dashboard-page${isBridgeOpen ? ' is-modal-open' : ''}`}>
+        <div className="dashboard-shell">
+          <section className="dashboard-actions">
+            <button
+              type="button"
+              className="dashboard-button dashboard-button-primary"
+              onClick={() => setIsBridgeOpen(true)}
+            >
+              Swap + Bridge
+            </button>
+            <button type="button" className="dashboard-button dashboard-button-ghost">
+              Connect Wallet
+            </button>
+          </section>
 
-        <section className="dashboard-hero-grid">
-          <article className="dashboard-panel balance-panel">
-            <div className="panel-head">
+          <section className="dashboard-balance-card">
+            <div className="balance-header">
               <div>
-                <p className="panel-label">Depositing balance</p>
-                <h1 className="balance-amount">$0</h1>
+                <p className="section-label">Earning Balance</p>
+                <h1>$0</h1>
               </div>
 
-              <div className="floating-metric">
-                <span>Earn TVL</span>
-                <strong>$233.53M</strong>
+              <div className="tvl-pill">
+                <span>Earning TVL</span>
+                <strong>$69.64M</strong>
               </div>
             </div>
 
-            <div className="balance-graphic">
-              <div className="balance-grid" />
-              <div className="balance-curve" />
-            </div>
+            <div className="balance-divider" />
 
-            <div className="balance-footer">
-              <div className="mini-stat with-icon">
-                <div className="mini-icon">◎</div>
+            <div className="balance-stats-row">
+              <div className="stat-group">
+                <div className="stat-icon">◈</div>
                 <div>
-                  <span>Unclaimed rewards</span>
+                  <span className="section-label">Unclaimed Rewards</span>
                   <strong>$0</strong>
                 </div>
               </div>
-              <div className="mini-pill">$0 claimed</div>
-              <button type="button" className="dashboard-button dashboard-button-ghost">
-                Claim
-              </button>
-              <div className="mini-stat with-icon">
-                <div className="mini-icon">◔</div>
+
+              <div className="stat-actions">
+                <div className="soft-pill">$0 Claimed</div>
+                <button type="button" className="dashboard-button dashboard-button-soft-secondary">
+                  Claim
+                </button>
+              </div>
+
+              <div className="stat-group stat-group-right">
+                <div className="stat-icon">◐</div>
                 <div>
-                  <span>Idle assets</span>
-                  <strong>$0 0%</strong>
+                  <span className="section-label">Idle Assets</span>
+                  <strong>
+                    $0 <small>0%</small>
+                  </strong>
                 </div>
               </div>
-              <button type="button" className="dashboard-button dashboard-button-primary dashboard-button-soft">
+
+              <button type="button" className="dashboard-button dashboard-button-blue">
                 Earn
               </button>
             </div>
-          </article>
+          </section>
 
-          <article className="dashboard-panel bridge-panel">
-            <div className="panel-head panel-head-compact">
-              <div>
-                <p className="panel-label">Bridge in dashboard</p>
-                <h2 className="bridge-title">Move assets in without leaving this screen.</h2>
-              </div>
-              <span className="status-pill">Live route</span>
-            </div>
+          <section className="promo-stack">
+            {promos.map((promo) => (
+              <article key={promo.title} className={promo.tone}>
+                <div className="promo-copy">
+                  <div className="promo-icon">{promo.icon}</div>
+                  <div>
+                    <h2>{promo.title}</h2>
+                    <p>{promo.body}</p>
+                  </div>
+                </div>
 
-            <div className="field-grid field-grid-double">
-              <label className="field">
-                <span>From</span>
-                <button type="button" className="field-button">
-                  Ethereum
+                <button
+                  type="button"
+                  className={promo.cta === 'Enable bridge' ? 'promo-button promo-button-blue' : 'promo-button'}
+                  onClick={promo.cta === 'Enable bridge' ? () => setIsBridgeOpen(true) : undefined}
+                >
+                  {promo.cta}
                 </button>
-              </label>
-              <label className="field">
-                <span>To</span>
-                <button type="button" className="field-button">
-                  LitVM
+              </article>
+            ))}
+          </section>
+
+          <section className="vaults-card">
+            <div className="vaults-top">
+              <div className="tab-pills">
+                <button type="button" className="tab-pill">
+                  Earn
                 </button>
-              </label>
-            </div>
+                <button type="button" className="tab-pill is-active">
+                  Your Positions
+                </button>
+              </div>
 
-            <div className="field">
-              <span>Asset</span>
-              <div className="segmented-control">
-                {assetOptions.map((asset) => (
-                  <button
-                    key={asset}
-                    type="button"
-                    className={asset === 'USDC' ? 'segment is-active' : 'segment'}
-                  >
-                    {asset}
-                  </button>
-                ))}
+              <div className="view-switch">
+                <button type="button" className="view-pill is-active" aria-label="List view">
+                  ☰
+                </button>
+                <button type="button" className="view-pill" aria-label="Grid view">
+                  ⬚
+                </button>
               </div>
             </div>
 
-            <label className="field">
-              <span>Amount</span>
-              <div className="amount-input">
-                <strong>12.50</strong>
+            <div className="vaults-filters">
+              <div className="filter-row">
+                <span>Deposit:</span>
+                <div className="filter-pill">All</div>
               </div>
-            </label>
-
-            <div className="quote-card">
-              <div>
-                <span>Receive</span>
-                <strong>12.39 USDC</strong>
-              </div>
-              <div>
-                <span>ETA</span>
-                <strong>4-6 min</strong>
-              </div>
-              <div>
-                <span>Fee</span>
-                <strong>$2.10</strong>
-              </div>
-            </div>
-
-            <button type="button" className="dashboard-button dashboard-button-primary dashboard-button-full">
-              Enable bridge and deposit
-            </button>
-          </article>
-        </section>
-
-        <section className="feature-stack">
-          {featureCards.map((card) => (
-            <article key={card.title} className={card.accent}>
-              <div className="feature-copy">
-                <div className="feature-icon">{card.icon}</div>
-                <div>
-                  <h3>{card.title}</h3>
-                  <p>{card.body}</p>
+              <div className="filter-row">
+                <span>Curator:</span>
+                <div className="filter-pill">
+                  <span className="filter-dot">◉</span>
+                  All
                 </div>
               </div>
-              <button type="button" className="feature-link">
-                {card.cta}
-              </button>
-            </article>
-          ))}
-        </section>
-
-        <section className="dashboard-panel vault-panel">
-          <div className="vault-header">
-            <div className="vault-tabs">
-              <button type="button" className="vault-tab is-active">
-                Earn
-              </button>
-              <button type="button" className="vault-tab">
-                Your Positions
-              </button>
             </div>
 
-            <div className="vault-controls">
-              <span className="filter-pill">Deposit: All</span>
-              <span className="filter-pill">Curator: All</span>
-            </div>
-          </div>
-
-          <div className="vault-table">
             <div className="vault-table-head">
               <span>Vault</span>
-              <span>Total deposits</span>
+              <span>Total Deposits</span>
               <span>APY</span>
               <span>Exposure</span>
               <span>Curator</span>
             </div>
 
-            {vaults.map((vault) => (
-              <article key={vault.name} className="vault-row">
-                <div className="vault-main">
-                  <div className="vault-orb" />
-                  <div>
-                    <strong>{vault.name}</strong>
-                    <span>{vault.tag}</span>
+            <div className="vault-table-body">
+              {vaults.map((vault) => (
+                <article key={vault.name} className="vault-row">
+                  <div className="vault-main">
+                    <div className="vault-orb" />
+                    <div>
+                      <strong>{vault.name}</strong>
+                      <span>{vault.tag}</span>
+                    </div>
                   </div>
+                  <div className="vault-cell">
+                    <strong>{vault.deposits}</strong>
+                    <span>0 {vault.asset}</span>
+                  </div>
+                  <div className="vault-cell vault-apy">{vault.apy}</div>
+                  <div className="vault-cell">{vault.exposure}</div>
+                  <div className="vault-cell">{vault.curator}</div>
+                </article>
+              ))}
+            </div>
+
+            <div className="vault-empty">
+              <button type="button" className="dashboard-button dashboard-button-ghost">
+                Connect Wallet
+              </button>
+            </div>
+          </section>
+
+          <section className="coming-soon-card">
+            <span className="coming-soon-icon">▣</span>
+            <span>More vaults coming soon</span>
+          </section>
+        </div>
+      </main>
+
+      {isBridgeOpen && (
+        <div className="bridge-modal-layer" role="dialog" aria-modal="true" aria-label="Swap and bridge">
+          <button
+            type="button"
+            className="bridge-modal-backdrop"
+            aria-label="Close swap and bridge"
+            onClick={() => setIsBridgeOpen(false)}
+          />
+
+          <div className="bridge-modal">
+            <div className="bridge-modal-header">
+              <div className="bridge-modal-title">
+                <span>Swap + Bridge</span>
+                <span className="express-pill">Express</span>
+              </div>
+
+              <div className="bridge-modal-actions">
+                <button type="button" className="icon-pill" aria-label="Settings">
+                  ⚙
+                </button>
+                <button type="button" className="icon-pill" aria-label="Close" onClick={() => setIsBridgeOpen(false)}>
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="swap-box from-box">
+              <span className="swap-label">From</span>
+              <div className="swap-amount-row">
+                <strong>0</strong>
+                <div className="token-pill">
+                  <span className="token-badge">$</span>
+                  <span>USDC</span>
                 </div>
-                <div className="vault-cell">
-                  <strong>{vault.deposits}</strong>
-                  <span>0 {vault.asset}</span>
+              </div>
+              <div className="swap-foot-row">
+                <span>$0</span>
+                <span>
+                  0 USDC <button type="button">MAX</button>
+                </span>
+              </div>
+            </div>
+
+            <div className="bridge-swap-icon">⬍</div>
+
+            <div className="swap-box to-box">
+              <span className="swap-label">To</span>
+              <div className="swap-amount-row">
+                <strong>0</strong>
+                <div className="token-pill token-pill-destination">
+                  <span className="token-badge">$</span>
+                  <span>USDC</span>
                 </div>
-                <div className="vault-cell vault-apy">{vault.apy}</div>
-                <div className="vault-cell">{vault.exposure}</div>
-                <div className="vault-cell">{vault.curator}</div>
-              </article>
-            ))}
+              </div>
+              <div className="swap-foot-row">
+                <span>$0</span>
+                <span>0 USDC</span>
+              </div>
+            </div>
+
+            <button type="button" className="dashboard-button dashboard-button-blue bridge-connect-button">
+              Connect Wallet
+            </button>
+
+            <button type="button" className="bridge-info-card">
+              <span className="bridge-info-icon">❯❯</span>
+              <span>
+                <strong>Bridge with Zero Slippage</strong>
+                <small>Canonical Bridge</small>
+              </span>
+              <span className="bridge-info-arrow">↗</span>
+            </button>
           </div>
-        </section>
-      </div>
-    </main>
+        </div>
+      )}
+    </>
   )
 }
 
