@@ -35,16 +35,16 @@
 .dashboard-shell {
   position: relative;
   z-index: 1;
-  width: min(1360px, calc(100vw - 56px));
+  width: min(1260px, calc(100vw - 88px));
   margin: 0 auto;
-  padding: 18px 0 40px;
+  padding: 16px 0 32px;
 }
 
 .dashboard-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .dashboard-button,
@@ -66,8 +66,8 @@
 }
 
 .dashboard-button {
-  min-height: 50px;
-  padding: 0 20px;
+  min-height: 44px;
+  padding: 0 18px;
   border-radius: 999px;
   color: var(--text);
   transition:
@@ -83,9 +83,9 @@
 }
 
 .wallet-status {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   color: #b7c8ff;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
 }
 
 .dashboard-button:hover,
@@ -123,15 +123,15 @@
 .bridge-modal,
 .bridge-info-card {
   border: 1px solid var(--border);
-  border-radius: 22px;
+  border-radius: 20px;
   background: linear-gradient(180deg, rgba(20, 24, 37, 0.98), rgba(16, 20, 32, 0.98));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 22px 60px rgba(0, 0, 0, 0.28);
+    0 18px 42px rgba(0, 0, 0, 0.24);
 }
 
 .dashboard-balance-card {
-  padding: 22px 22px 0;
+  padding: 18px 18px 0;
 }
 
 .balance-header {
@@ -156,36 +156,36 @@
 .section-label,
 .tvl-pill span,
 .swap-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
 }
 
 .balance-header h1 {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-family: var(--sky-display);
-  font-size: clamp(4rem, 7vw, 5.2rem);
+  font-size: clamp(3.3rem, 5.6vw, 4.4rem);
   line-height: 0.86;
   font-weight: 400;
 }
 
 .tvl-pill {
-  min-width: 210px;
-  padding: 18px 18px;
-  border-radius: 20px;
+  min-width: 180px;
+  padding: 14px 16px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .tvl-pill strong {
   display: block;
-  margin-top: 10px;
+  margin-top: 8px;
   font-family: var(--sky-display);
-  font-size: 2.15rem;
+  font-size: 1.8rem;
   font-weight: 400;
 }
 
 .balance-divider {
-  height: 150px;
-  margin-top: 18px;
+  height: 92px;
+  margin-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0)),
@@ -195,16 +195,16 @@
 .balance-stats-row {
   display: grid;
   grid-template-columns: 1.2fr auto 1fr auto;
-  gap: 14px;
+  gap: 12px;
   align-items: center;
-  padding: 16px 0 18px;
+  padding: 12px 0 14px;
 }
 
 .stat-group,
 .stat-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .stat-group-right {
@@ -212,8 +212,8 @@
 }
 
 .stat-icon {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -223,8 +223,8 @@
 
 .stat-group strong {
   display: block;
-  margin-top: 4px;
-  font-size: 1rem;
+  margin-top: 2px;
+  font-size: 0.9rem;
 }
 
 .stat-group small {
@@ -234,8 +234,8 @@
 
 .soft-pill,
 .filter-pill {
-  min-height: 40px;
-  padding: 0 16px;
+  min-height: 34px;
+  padding: 0 14px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -246,17 +246,17 @@
 
 .promo-stack {
   display: grid;
-  gap: 14px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .promo-card {
-  min-height: 94px;
-  padding: 18px 20px;
+  min-height: 76px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 18px;
 }
 
 .promo-card-blue {
@@ -270,34 +270,34 @@
 .promo-copy {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .promo-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.08);
-  font-size: 1rem;
+  font-size: 0.84rem;
 }
 
 .promo-copy h2 {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.05rem;
   font-weight: 600;
 }
 
 .promo-copy p {
   margin: 4px 0 0;
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.78rem;
 }
 
 .promo-button {
-  min-height: 44px;
-  padding: 0 18px;
+  min-height: 38px;
+  padding: 0 16px;
   border-radius: 999px;
   background: #f4f4f7;
   color: #101522;
@@ -306,35 +306,36 @@
 }
 
 .vaults-card {
-  margin-top: 18px;
+  margin-top: 14px;
   overflow: hidden;
 }
 
 .vaults-top {
-  padding: 18px 20px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 14px;
 }
 
 .tab-pills,
 .view-switch {
   display: flex;
-  gap: 8px;
-  padding: 6px;
+  gap: 6px;
+  padding: 5px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
 }
 
 .tab-pill,
 .view-pill {
-  min-height: 42px;
-  min-width: 42px;
-  padding: 0 16px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0 14px;
   border-radius: 999px;
   color: var(--muted);
   background: transparent;
+  font-size: 0.92rem;
 }
 
 .tab-pill.is-active,
@@ -344,17 +345,17 @@
 }
 
 .vaults-filters {
-  padding: 18px 20px;
+  padding: 14px 16px;
   display: flex;
-  gap: 24px;
+  gap: 18px;
   border-top: 1px solid var(--border);
 }
 
 .filter-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.92rem;
+  gap: 8px;
+  font-size: 0.84rem;
 }
 
 .filter-dot {
@@ -365,14 +366,14 @@
 .vault-row {
   display: grid;
   grid-template-columns: minmax(260px, 2.2fr) minmax(160px, 1fr) 0.7fr 1fr 0.9fr;
-  gap: 14px;
+  gap: 12px;
   align-items: center;
-  padding: 14px 20px;
+  padding: 12px 16px;
 }
 
 .vault-table-head {
   border-top: 1px solid var(--border);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
 }
 
 .vault-table-body {
@@ -386,12 +387,12 @@
 .vault-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .vault-orb {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   background: radial-gradient(circle at 30% 30%, #87ffd1, #3ab784 72%, #214941 100%);
   box-shadow: 0 0 20px rgba(65, 211, 157, 0.25);
@@ -400,12 +401,12 @@
 .vault-main strong,
 .vault-cell strong {
   display: block;
-  font-size: 0.94rem;
+  font-size: 0.84rem;
 }
 
 .vault-cell {
   color: #d2d5df;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
 }
 
 .vault-apy {
@@ -414,25 +415,26 @@
 }
 
 .vault-empty {
-  padding: 20px 20px 24px;
+  padding: 16px 16px 18px;
   display: flex;
   justify-content: center;
   border-top: 1px solid var(--border);
 }
 
 .coming-soon-card {
-  margin-top: 16px;
-  min-height: 68px;
+  margin-top: 12px;
+  min-height: 54px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 10px;
   color: var(--muted);
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .coming-soon-icon {
   opacity: 0.75;
+  font-size: 0.84rem;
 }
 
 .bridge-modal-layer {
@@ -454,9 +456,9 @@
 .bridge-modal {
   position: relative;
   z-index: 1;
-  width: min(520px, calc(100vw - 24px));
-  padding: 18px;
-  border-radius: 22px;
+  width: min(480px, calc(100vw - 20px));
+  padding: 16px;
+  border-radius: 20px;
 }
 
 .bridge-modal-header {
@@ -470,20 +472,20 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 600;
 }
 
 .express-pill {
-  min-height: 30px;
-  padding: 0 10px;
+  min-height: 26px;
+  padding: 0 8px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.06);
   color: var(--muted);
   text-transform: uppercase;
-  font-size: 0.76rem;
+  font-size: 0.68rem;
 }
 
 .bridge-modal-actions {
@@ -492,8 +494,8 @@
 }
 
 .icon-pill {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   color: var(--text);
   background: rgba(255, 255, 255, 0.07);
@@ -501,9 +503,9 @@
 
 .swap-box {
   position: relative;
-  margin-top: 14px;
-  padding: 14px 16px 12px;
-  border-radius: 20px;
+  margin-top: 12px;
+  padding: 12px 14px 10px;
+  border-radius: 18px;
   background: #1b2030;
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -513,17 +515,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .swap-amount-row strong {
-  font-size: 2.1rem;
+  font-size: 1.8rem;
   font-weight: 600;
 }
 
 .token-pill {
-  min-height: 46px;
-  padding: 0 14px 0 10px;
+  min-height: 40px;
+  padding: 0 12px 0 8px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -532,8 +534,8 @@
 }
 
 .token-badge {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -543,17 +545,17 @@
 }
 
 .swap-foot-row {
-  margin-top: 18px;
+  margin-top: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.98rem;
+  font-size: 0.84rem;
 }
 
 .swap-foot-row button {
   margin-left: 8px;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
@@ -563,9 +565,9 @@
 .bridge-swap-icon {
   position: relative;
   z-index: 2;
-  width: 40px;
-  height: 40px;
-  margin: -12px auto -12px;
+  width: 34px;
+  height: 34px;
+  margin: -10px auto -10px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -581,7 +583,7 @@
 .bridge-info-card {
   width: 100%;
   margin-top: 14px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -597,26 +599,26 @@
 
 .bridge-info-card strong {
   display: block;
-  font-size: 0.95rem;
+  font-size: 0.86rem;
 }
 
 .bridge-info-card small {
   display: inline-flex;
-  margin-top: 6px;
-  min-height: 24px;
+  margin-top: 4px;
+  min-height: 20px;
   padding: 0 8px;
   align-items: center;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--muted);
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.64rem;
 }
 
 .bridge-info-icon,
 .bridge-info-arrow {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -625,7 +627,7 @@
 
 @media (max-width: 1100px) {
   .dashboard-shell {
-    width: calc(100vw - 24px);
+    width: calc(100vw - 20px);
   }
 
   .balance-stats-row {
