@@ -35,16 +35,16 @@
 .dashboard-shell {
   position: relative;
   z-index: 1;
-  width: min(1480px, calc(100vw - 64px));
+  width: min(1360px, calc(100vw - 56px));
   margin: 0 auto;
-  padding: 24px 0 52px;
+  padding: 18px 0 40px;
 }
 
 .dashboard-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 14px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .dashboard-button,
@@ -66,8 +66,8 @@
 }
 
 .dashboard-button {
-  min-height: 56px;
-  padding: 0 24px;
+  min-height: 50px;
+  padding: 0 20px;
   border-radius: 999px;
   color: var(--text);
   transition:
@@ -83,9 +83,9 @@
 }
 
 .wallet-status {
-  margin: 0 0 18px;
+  margin: 0 0 14px;
   color: #b7c8ff;
-  font-size: 0.98rem;
+  font-size: 0.88rem;
 }
 
 .dashboard-button:hover,
@@ -123,7 +123,7 @@
 .bridge-modal,
 .bridge-info-card {
   border: 1px solid var(--border);
-  border-radius: 26px;
+  border-radius: 22px;
   background: linear-gradient(180deg, rgba(20, 24, 37, 0.98), rgba(16, 20, 32, 0.98));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
@@ -131,7 +131,7 @@
 }
 
 .dashboard-balance-card {
-  padding: 28px 28px 0;
+  padding: 22px 22px 0;
 }
 
 .balance-header {
@@ -156,36 +156,36 @@
 .section-label,
 .tvl-pill span,
 .swap-label {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
 }
 
 .balance-header h1 {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   font-family: var(--sky-display);
-  font-size: clamp(4.8rem, 9vw, 6.4rem);
+  font-size: clamp(4rem, 7vw, 5.2rem);
   line-height: 0.86;
   font-weight: 400;
 }
 
 .tvl-pill {
-  min-width: 240px;
-  padding: 22px 20px;
-  border-radius: 22px;
+  min-width: 210px;
+  padding: 18px 18px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .tvl-pill strong {
   display: block;
-  margin-top: 12px;
+  margin-top: 10px;
   font-family: var(--sky-display);
-  font-size: 2.6rem;
+  font-size: 2.15rem;
   font-weight: 400;
 }
 
 .balance-divider {
-  height: 200px;
-  margin-top: 24px;
+  height: 150px;
+  margin-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0)),
@@ -195,16 +195,16 @@
 .balance-stats-row {
   display: grid;
   grid-template-columns: 1.2fr auto 1fr auto;
-  gap: 18px;
+  gap: 14px;
   align-items: center;
-  padding: 22px 0 24px;
+  padding: 16px 0 18px;
 }
 
 .stat-group,
 .stat-actions {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .stat-group-right {
@@ -212,8 +212,8 @@
 }
 
 .stat-icon {
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -223,8 +223,8 @@
 
 .stat-group strong {
   display: block;
-  margin-top: 6px;
-  font-size: 1.15rem;
+  margin-top: 4px;
+  font-size: 1rem;
 }
 
 .stat-group small {
@@ -234,8 +234,8 @@
 
 .soft-pill,
 .filter-pill {
-  min-height: 46px;
-  padding: 0 18px;
+  min-height: 40px;
+  padding: 0 16px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -246,13 +246,13 @@
 
 .promo-stack {
   display: grid;
-  gap: 18px;
-  margin-top: 24px;
+  gap: 14px;
+  margin-top: 18px;
 }
 
 .promo-card {
-  min-height: 116px;
-  padding: 22px 24px;
+  min-height: 94px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -270,34 +270,34 @@
 .promo-copy {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 16px;
 }
 
 .promo-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.08);
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .promo-copy h2 {
   margin: 0;
-  font-size: 1.72rem;
+  font-size: 1.35rem;
   font-weight: 600;
 }
 
 .promo-copy p {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 0.98rem;
+  font-size: 0.88rem;
 }
 
 .promo-button {
-  min-height: 50px;
-  padding: 0 22px;
+  min-height: 44px;
+  padding: 0 18px;
   border-radius: 999px;
   background: #f4f4f7;
   color: #101522;
@@ -306,12 +306,12 @@
 }
 
 .vaults-card {
-  margin-top: 24px;
+  margin-top: 18px;
   overflow: hidden;
 }
 
 .vaults-top {
-  padding: 22px 24px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -321,17 +321,17 @@
 .tab-pills,
 .view-switch {
   display: flex;
-  gap: 10px;
-  padding: 8px;
+  gap: 8px;
+  padding: 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
 }
 
 .tab-pill,
 .view-pill {
-  min-height: 48px;
-  min-width: 48px;
-  padding: 0 20px;
+  min-height: 42px;
+  min-width: 42px;
+  padding: 0 16px;
   border-radius: 999px;
   color: var(--muted);
   background: transparent;
@@ -344,17 +344,17 @@
 }
 
 .vaults-filters {
-  padding: 22px 24px;
+  padding: 18px 20px;
   display: flex;
-  gap: 34px;
+  gap: 24px;
   border-top: 1px solid var(--border);
 }
 
 .filter-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  font-size: 1.05rem;
+  gap: 10px;
+  font-size: 0.92rem;
 }
 
 .filter-dot {
@@ -365,14 +365,14 @@
 .vault-row {
   display: grid;
   grid-template-columns: minmax(260px, 2.2fr) minmax(160px, 1fr) 0.7fr 1fr 0.9fr;
-  gap: 20px;
+  gap: 14px;
   align-items: center;
-  padding: 18px 24px;
+  padding: 14px 20px;
 }
 
 .vault-table-head {
   border-top: 1px solid var(--border);
-  font-size: 0.96rem;
+  font-size: 0.82rem;
 }
 
 .vault-table-body {
@@ -386,12 +386,12 @@
 .vault-main {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .vault-orb {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
   background: radial-gradient(circle at 30% 30%, #87ffd1, #3ab784 72%, #214941 100%);
   box-shadow: 0 0 20px rgba(65, 211, 157, 0.25);
@@ -400,11 +400,12 @@
 .vault-main strong,
 .vault-cell strong {
   display: block;
-  font-size: 1.06rem;
+  font-size: 0.94rem;
 }
 
 .vault-cell {
   color: #d2d5df;
+  font-size: 0.88rem;
 }
 
 .vault-apy {
@@ -413,21 +414,21 @@
 }
 
 .vault-empty {
-  padding: 28px 24px 34px;
+  padding: 20px 20px 24px;
   display: flex;
   justify-content: center;
   border-top: 1px solid var(--border);
 }
 
 .coming-soon-card {
-  margin-top: 22px;
-  min-height: 86px;
+  margin-top: 16px;
+  min-height: 68px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
   color: var(--muted);
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .coming-soon-icon {
@@ -453,9 +454,9 @@
 .bridge-modal {
   position: relative;
   z-index: 1;
-  width: min(560px, calc(100vw - 28px));
-  padding: 20px;
-  border-radius: 24px;
+  width: min(520px, calc(100vw - 24px));
+  padding: 18px;
+  border-radius: 22px;
 }
 
 .bridge-modal-header {
@@ -469,7 +470,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -491,8 +492,8 @@
 }
 
 .icon-pill {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
   color: var(--text);
   background: rgba(255, 255, 255, 0.07);
@@ -500,8 +501,8 @@
 
 .swap-box {
   position: relative;
-  margin-top: 16px;
-  padding: 16px 18px 14px;
+  margin-top: 14px;
+  padding: 14px 16px 12px;
   border-radius: 20px;
   background: #1b2030;
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -516,13 +517,13 @@
 }
 
 .swap-amount-row strong {
-  font-size: 2.5rem;
+  font-size: 2.1rem;
   font-weight: 600;
 }
 
 .token-pill {
-  min-height: 52px;
-  padding: 0 18px 0 12px;
+  min-height: 46px;
+  padding: 0 14px 0 10px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -531,8 +532,8 @@
 }
 
 .token-badge {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -580,7 +581,7 @@
 .bridge-info-card {
   width: 100%;
   margin-top: 14px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -596,7 +597,7 @@
 
 .bridge-info-card strong {
   display: block;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
 }
 
 .bridge-info-card small {
@@ -614,8 +615,8 @@
 
 .bridge-info-icon,
 .bridge-info-arrow {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   display: grid;
   place-items: center;
