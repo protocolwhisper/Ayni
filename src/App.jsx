@@ -1,5 +1,6 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import DashboardPage from './DashboardPage.jsx'
 
 const COINGECKO_LTC_PRICE = 'https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd'
 const COINGECKO_LTC_CHART =
@@ -334,6 +335,10 @@ function LtcPriceChart() {
 }
 
 function App() {
+  if (typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === '/dashboard') {
+    return <DashboardPage />
+  }
+
   const scrollRef = useRef(null)
   const [heroPointer, setHeroPointer] = useState({
     spotX: '56%',
