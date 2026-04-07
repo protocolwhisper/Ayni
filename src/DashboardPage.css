@@ -35,16 +35,16 @@
 .dashboard-shell {
   position: relative;
   z-index: 1;
-  width: min(1260px, calc(100vw - 88px));
+  width: min(1088px, calc(100vw - 180px));
   margin: 0 auto;
-  padding: 16px 0 32px;
+  padding: 20px 0 28px;
 }
 
 .dashboard-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .dashboard-button,
@@ -184,8 +184,8 @@
 }
 
 .balance-divider {
-  height: 92px;
-  margin-top: 14px;
+  height: 46px;
+  margin-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0)),
@@ -197,7 +197,7 @@
   grid-template-columns: 1.2fr auto 1fr auto;
   gap: 12px;
   align-items: center;
-  padding: 12px 0 14px;
+  padding: 10px 0 12px;
 }
 
 .stat-group,
@@ -247,7 +247,7 @@
 .promo-stack {
   display: grid;
   gap: 12px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .promo-card {
@@ -306,7 +306,7 @@
 }
 
 .vaults-card {
-  margin-top: 14px;
+  margin-top: 12px;
   overflow: hidden;
 }
 
