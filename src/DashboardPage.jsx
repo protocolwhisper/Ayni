@@ -1,21 +1,20 @@
 import './DashboardPage.css'
 
-const networkOptions = ['Ethereum', 'Base', 'Arbitrum']
 const assetOptions = ['ETH', 'USDC', 'USDT']
 
 const featureCards = [
   {
-    icon: 'A',
-    title: 'Deposit and earn on your USDC',
-    body: 'Bridge in once, route capital into curated USDC vaults, and keep deposits live from the same dashboard.',
+    icon: '✦',
+    title: 'Deposit and earn yield on your assets',
+    body: 'Bridge in and route capital straight into curated USDC strategies from the dashboard.',
     cta: 'How it works',
     accent: 'feature-card feature-card-primary',
   },
   {
-    icon: 'B',
-    title: 'Bridge is enabled before you deposit',
-    body: 'Users can turn on bridge access, receive USDC, and continue directly into the deposit flow without switching screens.',
-    cta: 'Enable bridge',
+    icon: '◫',
+    title: 'Bridge is integrated directly into deposits',
+    body: 'Enable bridge access, receive USDC, and continue directly into vault deposits without leaving this screen.',
+    cta: 'Open bridge',
     accent: 'feature-card feature-card-secondary',
   },
 ]
@@ -63,54 +62,56 @@ function DashboardPage() {
   return (
     <main className="dashboard-page">
       <div className="dashboard-shell">
-        <section className="dashboard-topbar">
-          <div>
-            <p className="dashboard-eyebrow">Earn Dashboard</p>
-            <h1>Deposit, get USDC, and enable bridge access in one flow.</h1>
-          </div>
-
-          <div className="topbar-actions">
-            <button type="button" className="dashboard-button dashboard-button-ghost">
-              View vaults
-            </button>
-            <button type="button" className="dashboard-button dashboard-button-primary">
-              Connect wallet
-            </button>
-          </div>
+        <section className="dashboard-actions">
+          <button type="button" className="dashboard-button dashboard-button-primary">
+            Deposit + Bridge
+          </button>
+          <button type="button" className="dashboard-button dashboard-button-ghost">
+            Connect wallet
+          </button>
         </section>
 
-        <section className="hero-grid">
+        <section className="dashboard-hero-grid">
           <article className="dashboard-panel balance-panel">
             <div className="panel-head">
               <div>
-                <p className="panel-label">Deposit balance</p>
-                <h2>$18,420</h2>
+                <p className="panel-label">Depositing balance</p>
+                <h1 className="balance-amount">$0</h1>
               </div>
 
               <div className="floating-metric">
-                <span>USDC ready</span>
-                <strong>12,580</strong>
+                <span>Earn TVL</span>
+                <strong>$233.53M</strong>
               </div>
             </div>
 
             <div className="balance-graphic">
-              <div className="balance-curve" />
               <div className="balance-grid" />
+              <div className="balance-curve" />
             </div>
 
             <div className="balance-footer">
-              <div className="mini-stat">
-                <span>Bridge status</span>
-                <strong>Ready</strong>
+              <div className="mini-stat with-icon">
+                <div className="mini-icon">◎</div>
+                <div>
+                  <span>Unclaimed rewards</span>
+                  <strong>$0</strong>
+                </div>
               </div>
-              <div className="mini-stat">
-                <span>Pending deposit</span>
-                <strong>4,000 USDC</strong>
+              <div className="mini-pill">$0 claimed</div>
+              <button type="button" className="dashboard-button dashboard-button-ghost">
+                Claim
+              </button>
+              <div className="mini-stat with-icon">
+                <div className="mini-icon">◔</div>
+                <div>
+                  <span>Idle assets</span>
+                  <strong>$0 0%</strong>
+                </div>
               </div>
-              <div className="mini-stat">
-                <span>Est. APY</span>
-                <strong>5.94%</strong>
-              </div>
+              <button type="button" className="dashboard-button dashboard-button-primary dashboard-button-soft">
+                Earn
+              </button>
             </div>
           </article>
 
@@ -118,9 +119,8 @@ function DashboardPage() {
             <div className="panel-head panel-head-compact">
               <div>
                 <p className="panel-label">Bridge in dashboard</p>
-                <h3>Move funds into USDC, then deposit immediately.</h3>
+                <h2 className="bridge-title">Move assets in without leaving this screen.</h2>
               </div>
-
               <span className="status-pill">Live route</span>
             </div>
 
@@ -128,10 +128,9 @@ function DashboardPage() {
               <label className="field">
                 <span>From</span>
                 <button type="button" className="field-button">
-                  {networkOptions[0]}
+                  Ethereum
                 </button>
               </label>
-
               <label className="field">
                 <span>To</span>
                 <button type="button" className="field-button">
@@ -158,34 +157,28 @@ function DashboardPage() {
             <label className="field">
               <span>Amount</span>
               <div className="amount-input">
-                <strong>12,500</strong>
-                <small>USDC</small>
+                <strong>12.50</strong>
               </div>
             </label>
 
             <div className="quote-card">
               <div>
                 <span>Receive</span>
-                <strong>12,462 USDC</strong>
+                <strong>12.39 USDC</strong>
               </div>
               <div>
                 <span>ETA</span>
-                <strong>3-5 min</strong>
+                <strong>4-6 min</strong>
               </div>
               <div>
-                <span>Bridge fee</span>
-                <strong>$38</strong>
+                <span>Fee</span>
+                <strong>$2.10</strong>
               </div>
             </div>
 
-            <div className="bridge-actions">
-              <button type="button" className="dashboard-button dashboard-button-secondary">
-                Enable bridge
-              </button>
-              <button type="button" className="dashboard-button dashboard-button-primary dashboard-button-wide">
-                Deposit USDC
-              </button>
-            </div>
+            <button type="button" className="dashboard-button dashboard-button-primary dashboard-button-full">
+              Enable bridge and deposit
+            </button>
           </article>
         </section>
 
@@ -199,7 +192,6 @@ function DashboardPage() {
                   <p>{card.body}</p>
                 </div>
               </div>
-
               <button type="button" className="feature-link">
                 {card.cta}
               </button>
@@ -214,13 +206,13 @@ function DashboardPage() {
                 Earn
               </button>
               <button type="button" className="vault-tab">
-                Your positions
+                Your Positions
               </button>
             </div>
 
-            <div className="vault-filters">
-              <span className="filter-pill">Deposit: USDC</span>
-              <span className="filter-pill">Bridge: Enabled</span>
+            <div className="vault-controls">
+              <span className="filter-pill">Deposit: All</span>
+              <span className="filter-pill">Curator: All</span>
             </div>
           </div>
 
@@ -244,7 +236,7 @@ function DashboardPage() {
                 </div>
                 <div className="vault-cell">
                   <strong>{vault.deposits}</strong>
-                  <span>{vault.asset}</span>
+                  <span>0 {vault.asset}</span>
                 </div>
                 <div className="vault-cell vault-apy">{vault.apy}</div>
                 <div className="vault-cell">{vault.exposure}</div>
