@@ -40,10 +40,17 @@
   padding: 20px 0 28px;
 }
 
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 16px;
+}
+
 .dashboard-topbar {
   display: flex;
   justify-content: flex-start;
-  margin-bottom: 12px;
 }
 
 .dashboard-back-link {
@@ -71,7 +78,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .dashboard-button,
@@ -652,6 +659,11 @@
 @media (max-width: 900px) {
   .dashboard-shell {
     width: calc(100vw - 20px);
+  }
+
+  .dashboard-header {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .dashboard-actions {

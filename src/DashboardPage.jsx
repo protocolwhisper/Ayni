@@ -113,29 +113,31 @@ function DashboardPage() {
     <>
       <main className={`dashboard-page${isBridgeOpen ? ' is-modal-open' : ''}`}>
         <div className="dashboard-shell">
-          <div className="dashboard-topbar">
-            <a className="dashboard-back-link" href="/">
-              Back to main page
-            </a>
-          </div>
+          <header className="dashboard-header">
+            <div className="dashboard-topbar">
+              <a className="dashboard-back-link" href="/">
+                Back to main page
+              </a>
+            </div>
 
-          <section className="dashboard-actions">
-            <button
-              type="button"
-              className="dashboard-button dashboard-button-primary"
-              onClick={() => setIsBridgeOpen(true)}
-            >
-              Swap + Bridge
-            </button>
-            <button
-              type="button"
-              className="dashboard-button dashboard-button-ghost"
-              onClick={handleConnectWallet}
-              disabled={isConnecting}
-            >
-              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-            </button>
-          </section>
+            <section className="dashboard-actions" aria-label="Dashboard actions">
+              <button
+                type="button"
+                className="dashboard-button dashboard-button-primary"
+                onClick={() => setIsBridgeOpen(true)}
+              >
+                Swap + Bridge
+              </button>
+              <button
+                type="button"
+                className="dashboard-button dashboard-button-ghost"
+                onClick={handleConnectWallet}
+                disabled={isConnecting}
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              </button>
+            </section>
+          </header>
 
           {walletStatus ? <p className="wallet-status">{walletStatus}</p> : null}
 
