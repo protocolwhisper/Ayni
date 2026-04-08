@@ -335,6 +335,7 @@ function LtcPriceChart() {
 
 function App() {
   const scrollRef = useRef(null)
+  const heroRef = useRef(null)
   const [showDock, setShowDock] = useState(false)
   const [heroPointer, setHeroPointer] = useState({
     spotX: '56%',
@@ -347,10 +348,12 @@ function App() {
     tagShiftY: '0px',
   })
 
-  function handleHeroMove(event) {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const x = (event.clientX - rect.left) / rect.width
-    const y = (event.clientY - rect.top) / rect.height
+  function updateHeroPointer(clientX, clientY) {
+    const rect = heroRef.current?.getBoundingClientRect()
+    if (!rect || rect.width <= 0 || rect.height <= 0) return
+
+    const x = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1)
+    const y = Math.min(Math.max((clientY - rect.top) / rect.height, 0), 1)
     const centeredX = x - 0.5
     const centeredY = y - 0.5
 
@@ -368,19 +371,8 @@ function App() {
     })
   }
 
-  function handleHeroLeave() {
-    startTransition(() => {
-      setHeroPointer({
-        spotX: '56%',
-        spotY: '44%',
-        parallaxX: '0px',
-        parallaxY: '0px',
-        tiltX: '0deg',
-        tiltY: '0deg',
-        tagShiftX: '0px',
-        tagShiftY: '0px',
-      })
-    })
+  function handleHeroMove(event) {
+    updateHeroPointer(event.clientX, event.clientY)
   }
 
   useEffect(() => {
@@ -482,14 +474,29 @@ function App() {
     return () => window.removeEventListener('resize', updateShellLeft)
   }, [])
 
+  useEffect(() => {
+    const handleWindowPointerMove = (event) => {
+      const rect = heroRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const withinHeroBand = event.clientY >= rect.top && event.clientY <= rect.bottom
+      if (!withinHeroBand) return
+
+      updateHeroPointer(event.clientX, event.clientY)
+    }
+
+    window.addEventListener('pointermove', handleWindowPointerMove)
+    return () => window.removeEventListener('pointermove', handleWindowPointerMove)
+  }, [])
+
   return (
     <div className="vault-page">
       <main className="vault-shell vault-scroll" ref={scrollRef}>
         <section
           className="hero-stage"
           id="overview"
+          ref={heroRef}
           onMouseMove={handleHeroMove}
-          onMouseLeave={handleHeroLeave}
           style={{
             '--spot-x': heroPointer.spotX,
             '--spot-y': heroPointer.spotY,
