@@ -1101,7 +1101,7 @@
   }
 
   .vault-scroll {
-    padding-bottom: 148px;
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
   }
 
   .cta-panel {
@@ -1483,9 +1483,10 @@
   }
 
   .hero-title {
-    max-width: 6.2ch;
-    font-size: clamp(2.55rem, 14vw, 3.9rem);
+    max-width: 7.4ch;
+    font-size: clamp(2.6rem, 11.8vw, 3.9rem);
     line-height: 0.96;
+    letter-spacing: -0.03em;
   }
 
   .hero-subtitle {
@@ -1613,7 +1614,8 @@
   }
 
   .hero-stage {
-    padding: 16px 14px 22px;
+    grid-template-rows: auto auto auto;
+    padding: 16px 14px 18px;
     gap: 14px;
   }
 
@@ -1631,7 +1633,8 @@
   }
 
   .hero-title {
-    font-size: clamp(2.2rem, 15vw, 3.1rem);
+    max-width: 8.2ch;
+    font-size: clamp(2.35rem, 11.6vw, 3.15rem);
   }
 
   .hero-actions {
@@ -1645,12 +1648,24 @@
   }
 
   .hero-visual {
-    min-height: 300px;
+    display: none;
   }
 
   .particle-sculpture {
     width: min(88vw, 300px);
     height: min(88vw, 300px);
+  }
+
+  .hero-subtitle {
+    max-width: 26ch;
+  }
+
+  .hero-stat-list {
+    gap: 10px;
+  }
+
+  .hero-stat {
+    padding: 11px 12px 11px 14px;
   }
 
   .market-card {
