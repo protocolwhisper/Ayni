@@ -689,7 +689,7 @@ export default function DashboardPage() {
 
   async function handleBridgeAction() {
     if (!walletAddress) {
-      await handleConnectWallet()
+      setBridgeError('Connect your wallet from the top-right button when you are ready.')
       return
     }
 
@@ -810,7 +810,7 @@ export default function DashboardPage() {
   }
 
   const bridgeActionLabel = !walletAddress
-    ? (isConnecting ? 'Connecting...' : 'Connect Wallet')
+    ? 'Connect Wallet Above'
     : isExecutingBridge
       ? 'Bridging...'
       : activeQuote
@@ -1155,7 +1155,7 @@ export default function DashboardPage() {
               type="button"
               className="dashboard-button dashboard-button-blue bridge-connect-button"
               onClick={handleBridgeAction}
-              disabled={isExecutingBridge || isBridgeDataLoading || (walletAddress && !METALAYER_API_KEY)}
+              disabled={!walletAddress || isExecutingBridge || isBridgeDataLoading || (walletAddress && !METALAYER_API_KEY)}
             >
               {bridgeActionLabel}
             </button>

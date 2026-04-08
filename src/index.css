@@ -3,7 +3,7 @@
 :root {
   --sky-display: 'Questrial', 'Avenir Next', 'Segoe UI', sans-serif;
   --sky-body: 'Manrope', 'SF Pro Text', 'Segoe UI', sans-serif;
-  --sky-bg: #bcb4c9;
+  --sky-bg: #05050c;
   --sky-text: #f7eeff;
   --sky-muted: #c6b0de;
   --sky-border: rgba(203, 148, 255, 0.3);
@@ -23,6 +23,7 @@ html {
 html,
 body {
   margin: 0;
+  height: 100%;
   min-height: 100%;
   background: var(--sky-bg);
 }
@@ -31,12 +32,15 @@ body {
   font-family: var(--sky-body);
   color: var(--sky-text);
   background: var(--sky-bg);
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--sky-bg);
 }
 
 a {
