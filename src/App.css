@@ -1291,6 +1291,29 @@
 }
 
 @media (max-width: 820px) {
+  .landing-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .landing-row .section-heading,
+  .landing-row .section-canvas,
+  .vision-market {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .landing-row .story-grid,
+  .story-grid,
+  .feature-row,
+  .cute-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .story-card {
+    min-height: 0;
+  }
+
   .composition-intro h2 {
     font-size: clamp(1.9rem, 8vw, 2.6rem);
   }
