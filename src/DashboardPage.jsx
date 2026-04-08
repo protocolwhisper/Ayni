@@ -113,6 +113,12 @@ function DashboardPage() {
     <>
       <main className={`dashboard-page${isBridgeOpen ? ' is-modal-open' : ''}`}>
         <div className="dashboard-shell">
+          <div className="dashboard-topbar">
+            <a className="dashboard-back-link" href="/">
+              Back to main page
+            </a>
+          </div>
+
           <section className="dashboard-actions">
             <button
               type="button"

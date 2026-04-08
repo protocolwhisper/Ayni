@@ -1,6 +1,5 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import DashboardPage from './DashboardPage.jsx'
 
 const COINGECKO_LTC_PRICE = 'https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd'
 const COINGECKO_LTC_CHART =
@@ -335,10 +334,6 @@ function LtcPriceChart() {
 }
 
 function App() {
-  if (typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === '/dashboard') {
-    return <DashboardPage />
-  }
-
   const scrollRef = useRef(null)
   const [showDock, setShowDock] = useState(false)
   const [heroPointer, setHeroPointer] = useState({
@@ -623,14 +618,7 @@ function App() {
             ))}
           </div>
 
-          <a
-            className="hero-cta"
-            href="/dashboard"
-            onClick={(e) => {
-              e.preventDefault()
-              if (typeof window !== 'undefined') window.location.assign('/dashboard')
-            }}
-          >
+          <a className="hero-cta" href="/dashboard/">
             Get Started
           </a>
         </section>
@@ -736,13 +724,7 @@ function App() {
                 Give Litecoin holders a trustless route into productive USDC liquidity without forcing them out of LTC.
               </p>
             </div>
-            <a
-              href="/dashboard"
-              onClick={(e) => {
-                e.preventDefault()
-                if (typeof window !== 'undefined') window.location.assign('/dashboard')
-              }}
-            >
+            <a href="/dashboard/">
               Launch dApp
             </a>
           </article>
