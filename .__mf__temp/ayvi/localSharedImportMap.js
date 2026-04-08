@@ -25,12 +25,14 @@
             from: "ayvi",
             async get () {
               if (false) {
-                throw new Error(`Shared module '${"react"}' must be provided by host`);
+                throw new Error(`[Module Federation] Shared module '${"react"}' must be provided by host`);
               }
               usedShared["react"].loaded = true
               const {"react": pkgDynamicImport} = importMap
               const res = await pkgDynamicImport()
-              const exportModule = {...res}
+              const exportModule = false && "react" === "react"
+                ? (res?.default ?? res)
+                : {...res}
               // All npm packages pre-built by vite will be converted to esm
               Object.defineProperty(exportModule, "__esModule", {
                 value: true,
@@ -55,12 +57,14 @@
             from: "ayvi",
             async get () {
               if (false) {
-                throw new Error(`Shared module '${"react-dom"}' must be provided by host`);
+                throw new Error(`[Module Federation] Shared module '${"react-dom"}' must be provided by host`);
               }
               usedShared["react-dom"].loaded = true
               const {"react-dom": pkgDynamicImport} = importMap
               const res = await pkgDynamicImport()
-              const exportModule = {...res}
+              const exportModule = false && "react-dom" === "react"
+                ? (res?.default ?? res)
+                : {...res}
               // All npm packages pre-built by vite will be converted to esm
               Object.defineProperty(exportModule, "__esModule", {
                 value: true,

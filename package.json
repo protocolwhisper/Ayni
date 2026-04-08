@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@metalayer/sdk": "^1.0.7",
+    "@tanstack/react-query": "^5.96.2",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "viem": "^2.47.10"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.11.0",

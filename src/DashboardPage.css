@@ -86,7 +86,7 @@
 .tab-pill,
 .view-pill,
 .icon-pill,
-.bridge-info-card {
+.bridge-route-card {
   border: 0;
   font: inherit;
 }
@@ -155,7 +155,7 @@
 .vaults-card,
 .coming-soon-card,
 .bridge-modal,
-.bridge-info-card {
+.bridge-route-card {
   border: 1px solid var(--border);
   border-radius: 20px;
   background: linear-gradient(180deg, rgba(20, 24, 37, 0.98), rgba(16, 20, 32, 0.98));
@@ -541,6 +541,41 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.swap-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.swap-chain-select,
+.swap-destination-pill {
+  min-height: 34px;
+  max-width: 54%;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.swap-chain-select {
+  cursor: pointer;
+}
+
+.swap-chain-select:focus-visible {
+  outline: 2px solid rgba(115, 144, 255, 0.46);
+  outline-offset: 2px;
+}
+
+.swap-destination-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d7ddf3;
+}
+
 .swap-amount-row {
   display: flex;
   align-items: center;
@@ -549,9 +584,24 @@
   margin-top: 8px;
 }
 
+.swap-amount-input,
 .swap-amount-row strong {
+  width: 100%;
   font-size: 1.8rem;
   font-weight: 600;
+  color: var(--text);
+}
+
+.swap-amount-input {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  outline: none;
+}
+
+.swap-amount-input::placeholder {
+  color: rgba(244, 245, 251, 0.46);
 }
 
 .token-pill {
@@ -580,7 +630,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   font-size: 0.84rem;
+  color: var(--muted);
 }
 
 .swap-foot-row button {
@@ -591,6 +643,11 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--muted);
+}
+
+.swap-foot-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .bridge-swap-icon {
@@ -611,7 +668,18 @@
   margin-top: 20px;
 }
 
-.bridge-dev-card {
+.bridge-feedback {
+  margin: 12px 4px 0;
+  color: #cfd9ff;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.bridge-feedback-error {
+  color: #ffb5ca;
+}
+
+.bridge-route-card {
   width: 100%;
   margin-top: 14px;
   padding: 12px 14px;
@@ -625,24 +693,24 @@
     linear-gradient(180deg, rgba(20, 24, 37, 0.98), rgba(17, 20, 32, 0.98));
 }
 
-.bridge-dev-copy {
+.bridge-route-copy {
   display: grid;
   gap: 8px;
 }
 
-.bridge-dev-copy strong {
+.bridge-route-copy strong {
   display: block;
   font-size: 0.94rem;
 }
 
-.bridge-dev-copy p {
+.bridge-route-copy p {
   margin: 0;
   color: var(--muted);
   font-size: 0.8rem;
   line-height: 1.5;
 }
 
-.bridge-dev-chip {
+.bridge-route-chip {
   display: inline-flex;
   width: fit-content;
   min-height: 22px;
@@ -656,13 +724,13 @@
   letter-spacing: 0.08em;
 }
 
-.bridge-dev-tags {
+.bridge-route-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.bridge-dev-tags span {
+.bridge-route-tags span {
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
@@ -671,6 +739,50 @@
   background: rgba(255, 255, 255, 0.06);
   color: #d9def0;
   font-size: 0.74rem;
+}
+
+.bridge-details-section {
+  display: grid;
+  gap: 10px;
+}
+
+.bridge-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bridge-detail-item {
+  min-height: 78px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  display: grid;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bridge-detail-item span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.65rem;
+}
+
+.bridge-detail-item strong,
+.bridge-detail-item a {
+  color: var(--text);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.bridge-detail-item a {
+  text-decoration: none;
+}
+
+.bridge-detail-item a:hover {
+  color: #cbd7ff;
 }
 
 @media (max-width: 900px) {
@@ -725,6 +837,25 @@
   .balance-stats-row,
   .vault-table-head,
   .vault-row {
+    grid-template-columns: 1fr;
+  }
+
+  .swap-field-head,
+  .swap-amount-row,
+  .swap-foot-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .swap-chain-select,
+  .swap-destination-pill,
+  .token-pill {
+    max-width: none;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bridge-details-grid {
     grid-template-columns: 1fr;
   }
 
