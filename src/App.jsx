@@ -285,8 +285,8 @@ function LtcPriceChart() {
   const min = values.length ? Math.min(...values) : 0
   const max = values.length ? Math.max(...values) : 1
   const range = max - min || 1
-  const width = 520
-  const height = 160
+  const width = 320
+  const height = 110
   const pad = 8
   const points = values.map((value, idx) => {
     const x = pad + (idx / (values.length - 1 || 1)) * (width - pad * 2)
@@ -340,6 +340,7 @@ function App() {
   }
 
   const scrollRef = useRef(null)
+  const [showDock, setShowDock] = useState(false)
   const [heroPointer, setHeroPointer] = useState({
     spotX: '56%',
     spotY: '44%',
@@ -426,6 +427,7 @@ function App() {
 
     if (id === 'overview') {
       container.scrollTo({ top: 0, behavior: 'smooth' })
+      setShowDock(false)
       if (typeof window !== 'undefined') window.history.replaceState(null, '', '#overview')
       return
     }
@@ -435,6 +437,55 @@ function App() {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     if (typeof window !== 'undefined') window.history.replaceState(null, '', hash)
   }
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const prevent = (e) => e.preventDefault()
+    const preventKeys = (e) => {
+      const keys = ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ']
+      if (keys.includes(e.key)) e.preventDefault()
+    }
+
+    container.addEventListener('wheel', prevent, { passive: false })
+    container.addEventListener('touchmove', prevent, { passive: false })
+    window.addEventListener('keydown', preventKeys)
+
+    return () => {
+      container.removeEventListener('wheel', prevent)
+      container.removeEventListener('touchmove', prevent)
+      window.removeEventListener('keydown', preventKeys)
+    }
+  }, [])
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const onScroll = () => {
+      const next = container.scrollTop > 80
+      setShowDock(next)
+    }
+
+    onScroll()
+    container.addEventListener('scroll', onScroll, { passive: true })
+    return () => container.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const updateShellLeft = () => {
+      const rect = container.getBoundingClientRect()
+      document.documentElement.style.setProperty('--vault-shell-left', `${rect.left}px`)
+    }
+
+    updateShellLeft()
+    window.addEventListener('resize', updateShellLeft)
+    return () => window.removeEventListener('resize', updateShellLeft)
+  }, [])
 
   return (
     <div className="vault-page">
@@ -589,21 +640,19 @@ function App() {
             <p className="section-label">Why Ayni</p>
             <h2>Litecoin liquidity, rebuilt as a trustless product.</h2>
             <p>Three simple truths explain the whole pitch.</p>
+            <div className="vision-market">
+              <LtcPriceChart />
+            </div>
           </div>
           <div className="section-canvas">
-            <div className="vision-layout">
-              <div className="vision-market">
-                <LtcPriceChart />
-              </div>
-              <div className="story-grid">
-                {CONTEXT_CARDS.map((card, index) => (
-                  <article key={card.title} className="story-card reveal-on-scroll" style={{ '--index': index }}>
-                    <span className="story-card-chip">{card.title}</span>
-                    <h3>{card.title}</h3>
-                    <p>{card.body}</p>
-                  </article>
-                ))}
-              </div>
+            <div className="story-grid">
+              {CONTEXT_CARDS.map((card, index) => (
+                <article key={card.title} className="story-card reveal-on-scroll" style={{ '--index': index }}>
+                  <span className="story-card-chip">{card.title}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                </article>
+              ))}
             </div>
           </div>
         </section>
@@ -698,6 +747,23 @@ function App() {
             </a>
           </article>
         </section>
+        <nav className={`vault-dock ${showDock ? 'is-visible' : ''}`} aria-label="Section navigation">
+          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#overview')}>
+            Home
+          </button>
+          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#vision')}>
+            Vision
+          </button>
+          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#mechanism')}>
+            Mechanism
+          </button>
+          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#milestones')}>
+            Milestones
+          </button>
+          <button type="button" className="vault-dock-btn vault-dock-btn-primary" onClick={() => scrollToHash('#start')}>
+            Get Started
+          </button>
+        </nav>
       </main>
     </div>
   )
