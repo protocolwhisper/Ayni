@@ -52,9 +52,9 @@ const promos = [
   },
   {
     icon: '⇄',
-    title: 'Bridge access is enabled inside the dashboard',
-    body: 'Use Swap + Bridge when you need funds in, then return straight to deposits and positions.',
-    cta: 'Enable bridge',
+    title: 'Caldera bridge access is enabled here',
+    body: 'Use Metalayer through Caldera: embed the widget for a fast launch or wire the SDK when you want a custom route UI.',
+    cta: 'Open Caldera bridge',
     tone: 'promo-card promo-card-violet',
   },
 ]
@@ -201,8 +201,8 @@ function DashboardPage() {
 
                 <button
                   type="button"
-                  className={promo.cta === 'Enable bridge' ? 'promo-button promo-button-blue' : 'promo-button'}
-                  onClick={promo.cta === 'Enable bridge' ? () => setIsBridgeOpen(true) : undefined}
+                  className={promo.cta === 'Open Caldera bridge' ? 'promo-button promo-button-blue' : 'promo-button'}
+                  onClick={promo.cta === 'Open Caldera bridge' ? () => setIsBridgeOpen(true) : undefined}
                 >
                   {promo.cta}
                 </button>
@@ -306,7 +306,7 @@ function DashboardPage() {
             <div className="bridge-modal-header">
               <div className="bridge-modal-title">
                 <span>Swap + Bridge</span>
-                <span className="express-pill">Express</span>
+                <span className="express-pill">Caldera</span>
               </div>
 
               <div className="bridge-modal-actions">
@@ -362,14 +362,18 @@ function DashboardPage() {
               {isConnecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
 
-            <button type="button" className="bridge-info-card">
-              <span className="bridge-info-icon">❯❯</span>
-              <span>
-                <strong>Bridge with Zero Slippage</strong>
-                <small>Canonical Bridge</small>
-              </span>
-              <span className="bridge-info-arrow">↗</span>
-            </button>
+            <div className="bridge-dev-card">
+              <div className="bridge-dev-copy">
+                <span className="bridge-dev-chip">Developer Mode</span>
+                <strong>Official Caldera integration path</strong>
+                <p>Use the Metalayer widget for a drop-in bridge, or use `@metalayer/sdk` for quote, execute, and order tracking in a custom flow.</p>
+              </div>
+              <div className="bridge-dev-tags" aria-label="Integration options">
+                <span>@metalayer/widget</span>
+                <span>@metalayer/sdk</span>
+                <span>Route API</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

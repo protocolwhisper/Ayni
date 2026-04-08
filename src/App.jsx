@@ -334,9 +334,7 @@ function LtcPriceChart() {
 }
 
 function App() {
-  const scrollRef = useRef(null)
   const heroRef = useRef(null)
-  const [showDock, setShowDock] = useState(false)
   const [heroPointer, setHeroPointer] = useState({
     spotX: '56%',
     spotY: '44%',
@@ -407,72 +405,20 @@ function App() {
   )
 
   function scrollToHash(hash) {
-    const container = scrollRef.current
-    if (!container) return
     const id = scrollTargets[hash]
     if (!id) return
 
     if (id === 'overview') {
-      container.scrollTo({ top: 0, behavior: 'smooth' })
-      setShowDock(false)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       if (typeof window !== 'undefined') window.history.replaceState(null, '', '#overview')
       return
     }
 
-    const el = container.querySelector(`#${id}`)
+    const el = document.getElementById(id)
     if (!el) return
     el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     if (typeof window !== 'undefined') window.history.replaceState(null, '', hash)
   }
-
-  useEffect(() => {
-    const container = scrollRef.current
-    if (!container) return
-
-    const prevent = (e) => e.preventDefault()
-    const preventKeys = (e) => {
-      const keys = ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ']
-      if (keys.includes(e.key)) e.preventDefault()
-    }
-
-    container.addEventListener('wheel', prevent, { passive: false })
-    container.addEventListener('touchmove', prevent, { passive: false })
-    window.addEventListener('keydown', preventKeys)
-
-    return () => {
-      container.removeEventListener('wheel', prevent)
-      container.removeEventListener('touchmove', prevent)
-      window.removeEventListener('keydown', preventKeys)
-    }
-  }, [])
-
-  useEffect(() => {
-    const container = scrollRef.current
-    if (!container) return
-
-    const onScroll = () => {
-      const next = container.scrollTop > 80
-      setShowDock(next)
-    }
-
-    onScroll()
-    container.addEventListener('scroll', onScroll, { passive: true })
-    return () => container.removeEventListener('scroll', onScroll)
-  }, [])
-
-  useEffect(() => {
-    const container = scrollRef.current
-    if (!container) return
-
-    const updateShellLeft = () => {
-      const rect = container.getBoundingClientRect()
-      document.documentElement.style.setProperty('--vault-shell-left', `${rect.left}px`)
-    }
-
-    updateShellLeft()
-    window.addEventListener('resize', updateShellLeft)
-    return () => window.removeEventListener('resize', updateShellLeft)
-  }, [])
 
   useEffect(() => {
     const handleWindowPointerMove = (event) => {
@@ -491,7 +437,7 @@ function App() {
 
   return (
     <div className="vault-page">
-      <main className="vault-shell vault-scroll" ref={scrollRef}>
+      <main className="vault-shell vault-scroll">
         <section
           className="hero-stage"
           id="overview"
@@ -736,23 +682,6 @@ function App() {
             </a>
           </article>
         </section>
-        <nav className={`vault-dock ${showDock ? 'is-visible' : ''}`} aria-label="Section navigation">
-          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#overview')}>
-            Home
-          </button>
-          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#vision')}>
-            Vision
-          </button>
-          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#mechanism')}>
-            Mechanism
-          </button>
-          <button type="button" className="vault-dock-btn" onClick={() => scrollToHash('#milestones')}>
-            Milestones
-          </button>
-          <button type="button" className="vault-dock-btn vault-dock-btn-primary" onClick={() => scrollToHash('#start')}>
-            Get Started
-          </button>
-        </nav>
       </main>
     </div>
   )

@@ -9,7 +9,7 @@
   max-width: 1240px;
   margin: 0 auto;
   border-radius: 0;
-  overflow: clip;
+  overflow: visible;
   border: 0;
   padding: 0 24px;
   background:
@@ -19,135 +19,10 @@
 }
 
 .vault-scroll {
-  height: 100vh;
-  overflow-y: auto;
-  overscroll-behavior: none;
+  min-height: 100vh;
+  overflow: visible;
   scroll-behavior: smooth;
-  scrollbar-width: none;
-  padding-bottom: 110px;
-}
-
-.vault-scroll::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-.vault-dock {
-  position: fixed;
-  top: 50%;
-  z-index: 20;
-  margin: 0;
-  width: fit-content;
-  max-width: calc(100% - 12px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(237, 232, 245, 0.14);
-  background:
-    radial-gradient(140% 140% at 20% 0%, rgba(170, 140, 235, 0.08), rgba(170, 140, 235, 0) 56%),
-    rgba(9, 9, 17, 0.28);
-  backdrop-filter: blur(6px);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-  opacity: 0;
-  transform: translate3d(0, -50%, 0);
-  pointer-events: none;
-  transition: opacity 220ms ease, transform 220ms ease;
-}
-
-.vault-dock.is-visible {
-  opacity: 1;
-  transform: translate3d(0, -50%, 0);
-  pointer-events: auto;
-}
-
-.vault-dock {
-  /* place it in the left gutter (outside centered shell) */
-  --dock-w: 152px;
-  left: max(10px, calc(var(--vault-shell-left, 18px) - var(--dock-w) - 28px));
-}
-
-.vault-dock-btn {
-  border-radius: 999px;
-  border: 1px solid rgba(237, 232, 245, 0.16);
-  padding: 8px 10px;
-  font-family: var(--sky-display);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(247, 243, 255, 0.9);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-  cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-  min-width: 132px;
-  text-align: left;
-}
-
-.vault-dock-btn:hover {
-  transform: translateY(-1px);
-  border-color: rgba(220, 204, 255, 0.45);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-}
-
-.vault-dock-btn-primary {
-  color: #17111f;
-  border-color: rgba(237, 232, 245, 0.4);
-  background: linear-gradient(145deg, #f0e8ff, #c6a9ff);
-}
-
-.vault-dock-btn:focus-visible {
-  outline: 2px solid rgba(220, 204, 255, 0.55);
-  outline-offset: 2px;
-}
-
-@media (max-width: 720px) {
-  .vault-dock {
-    position: sticky;
-    top: auto;
-    left: auto;
-    bottom: 14px;
-    transform: translate3d(0, 10px, 0);
-    flex-direction: row;
-    flex-wrap: wrap;
-    width: 100%;
-    justify-content: space-between;
-    border-radius: 18px;
-  }
-  .vault-dock-btn {
-    flex: 1;
-    text-align: center;
-    min-width: 0;
-  }
-}
-
-/* If there isn't enough left gutter, don't overlay content */
-@media (max-width: 1100px) {
-  .vault-dock {
-    position: sticky;
-    top: auto;
-    left: auto;
-    bottom: 14px;
-    transform: translate3d(0, 10px, 0);
-    flex-direction: row;
-    flex-wrap: wrap;
-    width: 100%;
-    justify-content: space-between;
-    border-radius: 18px;
-    margin: 18px 0;
-  }
-
-  .vault-dock.is-visible {
-    transform: translate3d(0, 0, 0);
-  }
-
-  .vault-dock-btn {
-    flex: 1;
-    min-width: 0;
-    text-align: center;
-  }
+  padding-bottom: 28px;
 }
 
 .hero-stage {
@@ -160,7 +35,7 @@
   --tag-shift-x: 0px;
   --tag-shift-y: 0px;
   position: relative;
-  min-height: min(820px, calc(100svh - 24px));
+  min-height: 100svh;
   display: grid;
   grid-template-columns: minmax(340px, 520px) minmax(0, 1fr);
   grid-template-rows: auto minmax(580px, 1fr);
