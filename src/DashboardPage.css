@@ -190,19 +190,26 @@
 }
 
 .litvm-network-card {
+  grid-column: 1 / -1;
   display: grid;
   align-content: space-between;
   min-height: 118px;
 }
 
 .network-networth {
-  margin-top: 14px;
   width: fit-content;
   min-width: 200px;
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
+}
+
+.network-metrics {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
 }
 
 .network-networth span {
@@ -219,6 +226,58 @@
   font-family: var(--sky-display);
   font-size: 1.35rem;
   font-weight: 600;
+}
+
+.health-factor-widget {
+  min-width: 240px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 130, 255, 0.16);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(164, 138, 230, 0.14), rgba(164, 138, 230, 0) 40%),
+    rgba(255, 255, 255, 0.03);
+}
+
+.health-factor-widget-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.health-factor-widget-head span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.health-factor-widget-head strong {
+  font-family: var(--sky-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.health-factor-track {
+  height: 8px;
+  margin-top: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.health-factor-fill {
+  display: block;
+  width: 22%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6f7eff 0%, #b8a5ff 100%);
+}
+
+.health-factor-widget p {
+  margin: 10px 0 0;
+  color: rgba(214, 222, 244, 0.72);
+  font-size: 0.82rem;
 }
 
 .emode-pill {

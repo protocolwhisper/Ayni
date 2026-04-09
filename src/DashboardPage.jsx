@@ -70,6 +70,8 @@ export default function DashboardPage() {
   const walletLabel = walletAddress ? shortAddress(walletAddress) : (isConnecting ? 'Connecting...' : 'Connect Wallet')
   const netWorth = USER_POSITIONS.reduce((sum, position) => sum + parseAmount(position.value), 0)
   const netWorthLabel = `$${netWorth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const healthFactorLabel = '--'
+  const healthFactorStatus = 'No borrow yet'
 
   return (
     <main className="dashboard-page">
@@ -100,9 +102,21 @@ export default function DashboardPage() {
             <header className="lending-card-head">
               <h2>LitVM Testnet</h2>
             </header>
-            <div className="network-networth">
-              <span>Net worth</span>
-              <strong>{netWorthLabel}</strong>
+            <div className="network-metrics">
+              <div className="network-networth">
+                <span>Net worth</span>
+                <strong>{netWorthLabel}</strong>
+              </div>
+              <div className="health-factor-widget">
+                <div className="health-factor-widget-head">
+                  <span>Health factor</span>
+                  <strong>{healthFactorLabel}</strong>
+                </div>
+                <div className="health-factor-track" aria-hidden="true">
+                  <span className="health-factor-fill" />
+                </div>
+                <p>{healthFactorStatus}</p>
+              </div>
             </div>
           </article>
 
@@ -211,7 +225,7 @@ export default function DashboardPage() {
                 <span>◈</span>
               </div>
               <div>
-                <h2>Deposit and earn yield on your assets</h2>
+                <h2>Learn about Ayni Protocol</h2>
               </div>
             </div>
             <a className="dashboard-link-card-button" href={BRIDGE_URL} target="_blank" rel="noreferrer">
