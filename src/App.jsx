@@ -1,6 +1,7 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
+const BRIDGE_URL = 'https://liteforge.hub.caldera.xyz/'
 const COINGECKO_LTC_PRICE = 'https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd'
 const COINGECKO_LTC_CHART =
   'https://api.coingecko.com/api/v3/coins/litecoin/market_chart?vs_currency=usd&days=7'
@@ -571,7 +572,7 @@ function App() {
             ))}
           </div>
 
-          <a className="hero-cta" href="/dashboard/">
+          <a className="hero-cta" href={BRIDGE_URL} target="_blank" rel="noreferrer">
             Get Started
           </a>
         </section>
@@ -677,7 +678,7 @@ function App() {
                 Give Litecoin holders a trustless route into productive USDC liquidity without forcing them out of LTC.
               </p>
             </div>
-            <a href="/dashboard/">
+            <a href={BRIDGE_URL} target="_blank" rel="noreferrer">
               Launch dApp
             </a>
           </article>
