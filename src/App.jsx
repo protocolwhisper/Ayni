@@ -572,7 +572,14 @@ function App() {
             ))}
           </div>
 
-          <a className="hero-cta" href={BRIDGE_URL} target="_blank" rel="noreferrer">
+          <a
+            className="hero-cta"
+            href="#start"
+            onClick={(event) => {
+              event.preventDefault()
+              scrollToHash('#start')
+            }}
+          >
             Get Started
           </a>
         </section>
@@ -678,7 +685,13 @@ function App() {
                 Give Litecoin holders a trustless route into productive USDC liquidity without forcing them out of LTC.
               </p>
             </div>
-            <a href={BRIDGE_URL} target="_blank" rel="noreferrer">
+            <a
+              href="#vision"
+              onClick={(event) => {
+                event.preventDefault()
+                scrollToHash('#vision')
+              }}
+            >
               Launch dApp
             </a>
           </article>
