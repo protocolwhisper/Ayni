@@ -9,6 +9,18 @@ bun install
 bun run dev
 ```
 
+## Dashboard gate
+
+Landing CTAs route to `/dashboard/`. If you want the dashboard protected before launch, enable the password gate in `.env`:
+
+```bash
+VITE_DASHBOARD_PASSWORD_ENABLED=true
+VITE_DASHBOARD_PASSWORD=your-password
+VITE_DASHBOARD_PASSWORD_HINT=
+```
+
+Leave `VITE_DASHBOARD_PASSWORD_ENABLED=false` to keep the dashboard open.
+
 ## Protocol config
 
 Copy `.env.example` to `.env` and set the Ayni market addresses before using the dashboard:
