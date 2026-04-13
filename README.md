@@ -9,6 +9,21 @@ bun install
 bun run dev
 ```
 
+## Protocol config
+
+Copy `.env.example` to `.env` and set the Ayni market addresses before using the dashboard:
+
+```bash
+VITE_AYNI_PROTOCOL_ADDRESS=0x...
+VITE_AYNI_RPC_URL=https://...
+VITE_AYNI_CHAIN_ID=
+VITE_AYNI_NETWORK_NAME=LitVM Testnet
+VITE_AYNI_COLLATERAL_TOKEN_ADDRESS=0x... # WZKLTC
+VITE_AYNI_DEBT_TOKEN_ADDRESS=0x... # USDC
+```
+
+The dashboard reads one collateral market from `AyniProtocol`: supplied asset `WZKLTC`, borrowed asset `USDC`. It loads the market address through `get_market(collateral, debt)`, reads position data from that vault, approves the vault for supply, and sends `deposit` / `borrow` through the protocol router.
+
 ## Wrapper contract config
 
 Copy `.env.example` to `.env` and set the wrapper deployment address before using the mint modal:
