@@ -16,12 +16,12 @@ const DOCS_URL = 'https://liteforge.hub.caldera.xyz/'
 const WALLET_DISCONNECTED_KEY = 'ayni_wallet_disconnected'
 const MAX_HEALTH_FACTOR = (1n << 256n) - 1n
 
+const PUBLIC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL ?? import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
+const PUBLIC_CHAIN_ID =
+  Number.parseInt(import.meta.env.VITE_PUBLIC_CHAIN_ID ?? import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '', 10) || null
 const AYNI_PROTOCOL_ADDRESS = import.meta.env.VITE_AYNI_PROTOCOL_ADDRESS ?? ''
-const AYNI_RPC_URL = import.meta.env.VITE_AYNI_RPC_URL ?? import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
-const AYNI_CHAIN_ID = Number.parseInt(
-  import.meta.env.VITE_AYNI_CHAIN_ID ?? import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '',
-  10,
-) || null
+const AYNI_RPC_URL = import.meta.env.VITE_AYNI_RPC_URL ?? PUBLIC_RPC_URL
+const AYNI_CHAIN_ID = Number.parseInt(import.meta.env.VITE_AYNI_CHAIN_ID ?? '', 10) || PUBLIC_CHAIN_ID
 const AYNI_NETWORK_NAME = import.meta.env.VITE_AYNI_NETWORK_NAME ?? 'LitVM Testnet'
 const COLLATERAL_TOKEN_ADDRESS =
   import.meta.env.VITE_AYNI_COLLATERAL_TOKEN_ADDRESS ?? import.meta.env.VITE_WZKLTC_CONTRACT_ADDRESS ?? ''
@@ -272,13 +272,36 @@ export default function DashboardPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return undefined
 
-    const manuallyDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
-    const initialWallet = manuallyDisconnected ? '' : (window.ethereum.selectedAddress ?? '')
-    const initialChain = window.ethereum.chainId ? Number.parseInt(window.ethereum.chainId, 16) : null
+    let cancelled = false
 
-    setWalletAddress(initialWallet)
-    setWalletChainId(initialChain)
-    setWalletStatus(initialWallet ? `Connected ${shortAddress(initialWallet)}` : '')
+    async function hydrateWalletState() {
+      const manuallyDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
+
+      try {
+        const [accounts, chainHex] = await Promise.all([
+          manuallyDisconnected
+            ? Promise.resolve([])
+            : window.ethereum.request?.({ method: 'eth_accounts' }).catch(() => []),
+          window.ethereum.request?.({ method: 'eth_chainId' }).catch(() => window.ethereum.chainId ?? null),
+        ])
+
+        if (cancelled) return
+
+        const initialWallet = accounts?.[0] ?? window.ethereum.selectedAddress ?? ''
+        const initialChain = chainHex ? Number.parseInt(chainHex, 16) : null
+
+        setWalletAddress(initialWallet)
+        setWalletChainId(initialChain)
+        setWalletStatus(initialWallet ? `Connected ${shortAddress(initialWallet)}` : '')
+      } catch {
+        if (cancelled) return
+        setWalletAddress('')
+        setWalletChainId(window.ethereum.chainId ? Number.parseInt(window.ethereum.chainId, 16) : null)
+        setWalletStatus('')
+      }
+    }
+
+    hydrateWalletState()
 
     function handleAccountsChanged(accounts) {
       const isDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
@@ -295,6 +318,7 @@ export default function DashboardPage() {
     window.ethereum.on?.('chainChanged', handleChainChanged)
 
     return () => {
+      cancelled = true
       window.ethereum.removeListener?.('accountsChanged', handleAccountsChanged)
       window.ethereum.removeListener?.('chainChanged', handleChainChanged)
     }
