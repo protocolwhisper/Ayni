@@ -1,52 +1,44 @@
 const DASHBOARD_PASSWORD_ENABLED = process.env.DASHBOARD_PASSWORD_ENABLED === 'true'
-const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD ?? ''
-const DASHBOARD_USERNAME = process.env.DASHBOARD_USERNAME ?? ''
+const DASHBOARD_ACCESS_COOKIE = 'ayni_dashboard_access'
 
-function unauthorizedResponse() {
-  return new Response('Authentication required.', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="Ayni Dashboard", charset="UTF-8"',
-      'Cache-Control': 'no-store',
-    },
-  })
-}
+function hasAccessCookie(cookieHeader) {
+  if (!cookieHeader) return false
 
-function decodeBasicAuth(value) {
-  if (!value?.startsWith('Basic ')) return null
-
-  try {
-    const decoded = atob(value.slice(6))
-    const separatorIndex = decoded.indexOf(':')
-    if (separatorIndex < 0) return null
-
-    return {
-      username: decoded.slice(0, separatorIndex),
-      password: decoded.slice(separatorIndex + 1),
-    }
-  } catch {
-    return null
-  }
+  return cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .some((part) => part === `${DASHBOARD_ACCESS_COOKIE}=1`)
 }
 
 export default function middleware(request) {
-  if (!DASHBOARD_PASSWORD_ENABLED || !DASHBOARD_PASSWORD) {
+  if (!DASHBOARD_PASSWORD_ENABLED) {
     return
   }
 
-  const credentials = decodeBasicAuth(request.headers.get('authorization'))
-  if (!credentials) {
-    return unauthorizedResponse()
+  const url = new URL(request.url)
+  const { pathname, search } = url
+
+  if (pathname.startsWith('/api/dashboard-auth')) {
+    return
   }
 
-  const passwordMatches = credentials.password === DASHBOARD_PASSWORD
-  const usernameMatches = !DASHBOARD_USERNAME || credentials.username === DASHBOARD_USERNAME
+  const hasAccess = hasAccessCookie(request.headers.get('cookie'))
 
-  if (!passwordMatches || !usernameMatches) {
-    return unauthorizedResponse()
+  if (pathname.startsWith('/dashboard-login')) {
+    if (hasAccess) {
+      return Response.redirect(new URL('/dashboard/', request.url), 302)
+    }
+
+    return
+  }
+
+  if (pathname.startsWith('/dashboard') && !hasAccess) {
+    const loginUrl = new URL('/dashboard-login/', request.url)
+    loginUrl.searchParams.set('next', pathname + search)
+    return Response.redirect(loginUrl, 302)
   }
 }
 
 export const config = {
-  matcher: ['/dashboard', '/dashboard/:path*'],
+  matcher: ['/dashboard', '/dashboard/:path*', '/dashboard-login', '/dashboard-login/:path*', '/api/dashboard-auth'],
 }

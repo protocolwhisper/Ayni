@@ -246,6 +246,7 @@ export default function DashboardPage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [isBridgeOpen, setIsBridgeOpen] = useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [actionModal, setActionModal] = useState({ type: '', value: '', error: '' })
   const [walletStatus, setWalletStatus] = useState('')
   const [walletAddress, setWalletAddress] = useState('')
   const [walletChainId, setWalletChainId] = useState(null)
@@ -272,36 +273,13 @@ export default function DashboardPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return undefined
 
-    let cancelled = false
+    const manuallyDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
+    const initialWallet = manuallyDisconnected ? '' : (window.ethereum.selectedAddress ?? '')
+    const initialChain = window.ethereum.chainId ? Number.parseInt(window.ethereum.chainId, 16) : null
 
-    async function hydrateWalletState() {
-      const manuallyDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
-
-      try {
-        const [accounts, chainHex] = await Promise.all([
-          manuallyDisconnected
-            ? Promise.resolve([])
-            : window.ethereum.request?.({ method: 'eth_accounts' }).catch(() => []),
-          window.ethereum.request?.({ method: 'eth_chainId' }).catch(() => window.ethereum.chainId ?? null),
-        ])
-
-        if (cancelled) return
-
-        const initialWallet = accounts?.[0] ?? window.ethereum.selectedAddress ?? ''
-        const initialChain = chainHex ? Number.parseInt(chainHex, 16) : null
-
-        setWalletAddress(initialWallet)
-        setWalletChainId(initialChain)
-        setWalletStatus(initialWallet ? `Connected ${shortAddress(initialWallet)}` : '')
-      } catch {
-        if (cancelled) return
-        setWalletAddress('')
-        setWalletChainId(window.ethereum.chainId ? Number.parseInt(window.ethereum.chainId, 16) : null)
-        setWalletStatus('')
-      }
-    }
-
-    hydrateWalletState()
+    setWalletAddress(initialWallet)
+    setWalletChainId(initialChain)
+    setWalletStatus(initialWallet ? `Connected ${shortAddress(initialWallet)}` : '')
 
     function handleAccountsChanged(accounts) {
       const isDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
@@ -318,7 +296,6 @@ export default function DashboardPage() {
     window.ethereum.on?.('chainChanged', handleChainChanged)
 
     return () => {
-      cancelled = true
       window.ethereum.removeListener?.('accountsChanged', handleAccountsChanged)
       window.ethereum.removeListener?.('chainChanged', handleChainChanged)
     }
@@ -571,6 +548,10 @@ export default function DashboardPage() {
     return hash
   }
 
+  function closeActionModal() {
+    setActionModal({ type: '', value: '', error: '' })
+  }
+
   async function handleSupply() {
     if (!walletAddress) {
       await handleConnectWallet()
@@ -587,82 +568,7 @@ export default function DashboardPage() {
       return
     }
 
-    const rawInput = window.prompt(
-      `Supply ${COLLATERAL_ASSET.symbol}\nWallet balance: ${formatTokenAmount(
-        dashboardState.walletBalance,
-        dashboardState.collateralDecimals,
-        6,
-      )}`,
-      '',
-    )
-
-    if (rawInput == null) return
-
-    let amount
-    try {
-      amount = parseUnits(rawInput.trim(), dashboardState.collateralDecimals)
-    } catch {
-      setDashboardMessage({ tone: 'warning', text: 'Enter a valid supply amount.' })
-      return
-    }
-
-    if (amount <= 0n) {
-      setDashboardMessage({ tone: 'warning', text: 'Supply amount must be greater than zero.' })
-      return
-    }
-
-    if (amount > dashboardState.walletBalance) {
-      setDashboardMessage({ tone: 'warning', text: 'Supply amount is above your WZKLTC balance.' })
-      return
-    }
-
-    const canProceed = await ensureProtocolChain()
-    if (!canProceed) return
-
-    setPendingAction('supply')
-    setDashboardMessage({ tone: '', text: '' })
-
-    try {
-      const allowance = await publicClient.readContract({
-        address: COLLATERAL_TOKEN_ADDRESS,
-        abi: ERC20_ABI,
-        functionName: 'allowance',
-        args: [walletAddress, dashboardState.marketAddress],
-      })
-
-      if (allowance < amount) {
-        setDashboardMessage({ tone: '', text: `Approve ${COLLATERAL_ASSET.symbol} in your wallet.` })
-        await sendTransaction({
-          to: COLLATERAL_TOKEN_ADDRESS,
-          data: encodeFunctionData({
-            abi: ERC20_ABI,
-            functionName: 'approve',
-            args: [dashboardState.marketAddress, maxUint256],
-          }),
-        })
-      }
-
-      setDashboardMessage({ tone: '', text: `Supplying ${COLLATERAL_ASSET.symbol}...` })
-      await sendTransaction({
-        to: AYNI_PROTOCOL_ADDRESS,
-        data: encodeFunctionData({
-          abi: AYNI_PROTOCOL_ABI,
-          functionName: 'deposit',
-          args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS, amount],
-        }),
-      })
-
-      setDashboardMessage({ tone: 'success', text: `Supplied ${rawInput.trim()} ${COLLATERAL_ASSET.symbol}.` })
-      setRefreshNonce((value) => value + 1)
-    } catch (error) {
-      const rejected = error?.code === 4001
-      setDashboardMessage({
-        tone: 'warning',
-        text: rejected ? 'Supply was cancelled.' : 'Supply failed. Please try again.',
-      })
-    } finally {
-      setPendingAction('')
-    }
+    setActionModal({ type: 'supply', value: '', error: '' })
   }
 
   async function handleBorrow() {
@@ -687,58 +593,102 @@ export default function DashboardPage() {
       return
     }
 
-    const rawInput = window.prompt(
-      `Borrow ${DEBT_ASSET.symbol}\nAvailable now: ${formatTokenAmount(
-        borrowCapacity,
-        dashboardState.debtDecimals,
-        6,
-      )}`,
-      '',
-    )
+    setActionModal({ type: 'borrow', value: '', error: '' })
+  }
 
-    if (rawInput == null) return
-
+  async function submitActionModal() {
+    const isSupply = actionModal.type === 'supply'
+    const decimals = isSupply ? dashboardState.collateralDecimals : dashboardState.debtDecimals
+    const trimmedValue = actionModal.value.trim()
     let amount
+
     try {
-      amount = parseUnits(rawInput.trim(), dashboardState.debtDecimals)
+      amount = parseUnits(trimmedValue, decimals)
     } catch {
-      setDashboardMessage({ tone: 'warning', text: 'Enter a valid borrow amount.' })
+      setActionModal((current) => ({ ...current, error: `Enter a valid ${isSupply ? 'supply' : 'borrow'} amount.` }))
       return
     }
 
     if (amount <= 0n) {
-      setDashboardMessage({ tone: 'warning', text: 'Borrow amount must be greater than zero.' })
+      setActionModal((current) => ({
+        ...current,
+        error: `${isSupply ? 'Supply' : 'Borrow'} amount must be greater than zero.`,
+      }))
       return
     }
 
-    if (amount > borrowCapacity) {
-      setDashboardMessage({ tone: 'warning', text: 'Borrow amount is above your available capacity.' })
+    if (isSupply && amount > dashboardState.walletBalance) {
+      setActionModal((current) => ({ ...current, error: 'Supply amount is above your WZKLTC balance.' }))
+      return
+    }
+
+    const borrowCapacity = minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
+    if (!isSupply && amount > borrowCapacity) {
+      setActionModal((current) => ({ ...current, error: 'Borrow amount is above your available capacity.' }))
       return
     }
 
     const canProceed = await ensureProtocolChain()
     if (!canProceed) return
 
-    setPendingAction('borrow')
-    setDashboardMessage({ tone: '', text: `Borrowing ${DEBT_ASSET.symbol}...` })
+    setPendingAction(actionModal.type)
+    setDashboardMessage({ tone: '', text: '' })
 
     try {
-      await sendTransaction({
-        to: AYNI_PROTOCOL_ADDRESS,
-        data: encodeFunctionData({
-          abi: AYNI_PROTOCOL_ABI,
-          functionName: 'borrow',
-          args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS, amount],
-        }),
-      })
+      if (isSupply) {
+        const allowance = await publicClient.readContract({
+          address: COLLATERAL_TOKEN_ADDRESS,
+          abi: ERC20_ABI,
+          functionName: 'allowance',
+          args: [walletAddress, dashboardState.marketAddress],
+        })
 
-      setDashboardMessage({ tone: 'success', text: `Borrowed ${rawInput.trim()} ${DEBT_ASSET.symbol}.` })
+        if (allowance < amount) {
+          setDashboardMessage({ tone: '', text: `Approve ${COLLATERAL_ASSET.symbol} in your wallet.` })
+          await sendTransaction({
+            to: COLLATERAL_TOKEN_ADDRESS,
+            data: encodeFunctionData({
+              abi: ERC20_ABI,
+              functionName: 'approve',
+              args: [dashboardState.marketAddress, maxUint256],
+            }),
+          })
+        }
+
+        setDashboardMessage({ tone: '', text: `Supplying ${COLLATERAL_ASSET.symbol}...` })
+        await sendTransaction({
+          to: AYNI_PROTOCOL_ADDRESS,
+          data: encodeFunctionData({
+            abi: AYNI_PROTOCOL_ABI,
+            functionName: 'deposit',
+            args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS, amount],
+          }),
+        })
+
+        setDashboardMessage({ tone: 'success', text: `Supplied ${trimmedValue} ${COLLATERAL_ASSET.symbol}.` })
+      } else {
+        setDashboardMessage({ tone: '', text: `Borrowing ${DEBT_ASSET.symbol}...` })
+        await sendTransaction({
+          to: AYNI_PROTOCOL_ADDRESS,
+          data: encodeFunctionData({
+            abi: AYNI_PROTOCOL_ABI,
+            functionName: 'borrow',
+            args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS, amount],
+          }),
+        })
+
+        setDashboardMessage({ tone: 'success', text: `Borrowed ${trimmedValue} ${DEBT_ASSET.symbol}.` })
+      }
+
+      closeActionModal()
       setRefreshNonce((value) => value + 1)
     } catch (error) {
       const rejected = error?.code === 4001
       setDashboardMessage({
         tone: 'warning',
-        text: rejected ? 'Borrow was cancelled.' : 'Borrow failed. Please try again.',
+        text: rejected
+          ? `${isSupply ? 'Supply' : 'Borrow'} was cancelled.`
+          : `${isSupply ? 'Supply' : 'Borrow'} failed. Please try again.`,
       })
     } finally {
       setPendingAction('')
@@ -785,6 +735,22 @@ export default function DashboardPage() {
       : []
   const borrowRows =
     showZeroBalances || borrowAvailable > 0n || dashboardState.userDebt > 0n ? [DEBT_ASSET] : []
+  const actionModalOpen = actionModal.type === 'supply' || actionModal.type === 'borrow'
+  const actionModalIsSupply = actionModal.type === 'supply'
+  const actionModalTitle = actionModalIsSupply ? `Supply ${COLLATERAL_ASSET.symbol}` : `Borrow ${DEBT_ASSET.symbol}`
+  const actionModalKicker = actionModalIsSupply ? 'Supply' : 'Borrow'
+  const actionModalBalanceLabel = actionModalIsSupply ? 'Wallet balance' : 'Available now'
+  const actionModalBalanceValue = actionModalIsSupply
+    ? `${formatTokenAmount(dashboardState.walletBalance, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
+    : `${formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+  const actionModalButtonLabel =
+    pendingAction === actionModal.type
+      ? actionModalIsSupply
+        ? 'Supplying...'
+        : 'Borrowing...'
+      : actionModalIsSupply
+        ? 'Confirm supply'
+        : 'Confirm borrow'
   const borrowDetailsRows = [
     {
       label: 'Vault',
@@ -1050,6 +1016,74 @@ export default function DashboardPage() {
                   <strong>{item.value}</strong>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {actionModalOpen ? (
+        <div className="dashboard-mini-modal-backdrop" onClick={closeActionModal} role="presentation">
+          <div
+            className="dashboard-action-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="action-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="dashboard-mini-modal-head">
+              <div>
+                <p className="dashboard-mini-modal-kicker">{actionModalKicker}</p>
+                <h2 id="action-modal-title">{actionModalTitle}</h2>
+              </div>
+              <button
+                type="button"
+                className="dashboard-mini-modal-close"
+                onClick={closeActionModal}
+                aria-label="Close action modal"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="dashboard-action-modal-body">
+              <div className="dashboard-action-balance-card">
+                <span>{actionModalBalanceLabel}</span>
+                <strong>{actionModalBalanceValue}</strong>
+              </div>
+
+              <label className="dashboard-action-input-wrap">
+                <span>Amount</span>
+                <input
+                  className="dashboard-action-input"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={actionModal.value}
+                  onChange={(event) =>
+                    setActionModal((current) => ({
+                      ...current,
+                      value: event.target.value.replace(/[^0-9.]/g, ''),
+                      error: '',
+                    }))
+                  }
+                />
+              </label>
+
+              {actionModal.error ? <p className="dashboard-status dashboard-status-warning">{actionModal.error}</p> : null}
+
+              <div className="dashboard-action-modal-actions">
+                <button type="button" className="dashboard-button dashboard-button-ghost" onClick={closeActionModal}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="dashboard-button dashboard-button-primary"
+                  onClick={submitActionModal}
+                  disabled={pendingAction === 'supply' || pendingAction === 'borrow'}
+                >
+                  {actionModalButtonLabel}
+                </button>
+              </div>
             </div>
           </div>
         </div>
