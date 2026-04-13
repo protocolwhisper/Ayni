@@ -1,16 +1,53 @@
-# React + Vite
+# Ayni Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Dashboard and contract-first WZKLTC mint flow for the Ayni prototype.
 
-Currently, two official plugins are available:
+## Local setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+bun install
+bun run dev
+```
 
-## React Compiler
+## Dashboard gate
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Landing CTAs route to `/dashboard/`. If you want the dashboard protected before launch, enable the password gate in `.env`:
 
-## Expanding the ESLint configuration
+```bash
+VITE_DASHBOARD_PASSWORD_ENABLED=true
+VITE_DASHBOARD_PASSWORD=your-password
+VITE_DASHBOARD_PASSWORD_HINT=
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Leave `VITE_DASHBOARD_PASSWORD_ENABLED=false` to keep the dashboard open.
+
+## Protocol config
+
+Copy `.env.example` to `.env` and set the Ayni market addresses before using the dashboard:
+
+```bash
+VITE_AYNI_PROTOCOL_ADDRESS=0x...
+VITE_AYNI_RPC_URL=https://...
+VITE_AYNI_CHAIN_ID=
+VITE_AYNI_NETWORK_NAME=LitVM Testnet
+VITE_AYNI_COLLATERAL_TOKEN_ADDRESS=0x... # WZKLTC
+VITE_AYNI_DEBT_TOKEN_ADDRESS=0x... # USDC
+```
+
+The dashboard reads one collateral market from `AyniProtocol`: supplied asset `WZKLTC`, borrowed asset `USDC`. It loads the market address through `get_market(collateral, debt)`, reads position data from that vault, approves the vault for supply, and sends `deposit` / `borrow` through the protocol router.
+
+## Wrapper contract config
+
+Copy `.env.example` to `.env` and set the wrapper deployment address before using the mint modal:
+
+```bash
+VITE_WZKLTC_CONTRACT_ADDRESS=0x...
+VITE_WZKLTC_CHAIN_ID=
+VITE_WZKLTC_RPC_URL=https://...
+VITE_ZKLTC_TOKEN_ADDRESS=
+VITE_WZKLTC_SOURCE_CHAIN_NAME=Liteforge
+VITE_WZKLTC_DEST_CHAIN_NAME=Wrapped zkLTC
+VITE_WZKLTC_CONTRACT_LABEL=Wrapped zkLTC
+```
+
+The modal reads the source-side balance through `VITE_WZKLTC_RPC_URL`. If `VITE_ZKLTC_TOKEN_ADDRESS` is set, it reads `balanceOf` from that token; otherwise it reads the native balance on that chain. Minted `WZKLTC` returns to the connected wallet.

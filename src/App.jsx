@@ -2,6 +2,7 @@ import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
 const BRIDGE_URL = 'https://liteforge.hub.caldera.xyz/'
+const DASHBOARD_URL = '/dashboard/'
 const COINGECKO_LTC_PRICE = 'https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=usd'
 const COINGECKO_LTC_CHART =
   'https://api.coingecko.com/api/v3/coins/litecoin/market_chart?vs_currency=usd&days=7'
@@ -574,11 +575,7 @@ function App() {
 
           <a
             className="hero-cta"
-            href="#start"
-            onClick={(event) => {
-              event.preventDefault()
-              scrollToHash('#start')
-            }}
+            href={DASHBOARD_URL}
           >
             Get Started
           </a>
@@ -686,13 +683,9 @@ function App() {
               </p>
             </div>
             <a
-              href="#vision"
-              onClick={(event) => {
-                event.preventDefault()
-                scrollToHash('#vision')
-              }}
+              href={DASHBOARD_URL}
             >
-              Launch dApp
+              Launch App
             </a>
           </article>
         </section>
