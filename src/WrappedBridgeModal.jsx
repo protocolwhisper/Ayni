@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { encodeFunctionData, formatEther, isAddress, parseEther } from 'viem'
+import { createPublicClient, encodeFunctionData, formatEther, formatUnits, http, isAddress, parseEther } from 'viem'
 import './WrappedBridgeModal.css'
 
 const WRAPPED_ZKLTC_ABI = [
@@ -12,12 +12,30 @@ const WRAPPED_ZKLTC_ABI = [
   },
 ]
 
+const ERC20_BALANCE_ABI = [
+  {
+    inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'decimals',
+    outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
+
 const WZKLTC_CONTRACT_ADDRESS = import.meta.env.VITE_WZKLTC_CONTRACT_ADDRESS ?? ''
 const WZKLTC_CHAIN_ID = Number.parseInt(import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '', 10) || null
+const WZKLTC_RPC_URL = import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
+const ZKLTC_TOKEN_ADDRESS = import.meta.env.VITE_ZKLTC_TOKEN_ADDRESS ?? ''
 const SOURCE_CHAIN_NAME = import.meta.env.VITE_WZKLTC_SOURCE_CHAIN_NAME ?? 'Liteforge'
 const DESTINATION_CHAIN_NAME = import.meta.env.VITE_WZKLTC_DEST_CHAIN_NAME ?? 'Wrapped zkLTC'
 const CONTRACT_LABEL = import.meta.env.VITE_WZKLTC_CONTRACT_LABEL ?? 'Wrapped zkLTC'
-const GAS_BUFFER = 0.001
 
 function formatTokenAmount(value, maximumFractionDigits = 4) {
   const amount = Number(value)
@@ -92,15 +110,24 @@ export default function WrappedBridgeModal({
 }) {
   const [sendAmount, setSendAmount] = useState('')
   const [walletBalance, setWalletBalance] = useState(0)
+  const [gasReserve, setGasReserve] = useState(0)
   const [activeChainId, setActiveChainId] = useState(null)
   const [panelMessage, setPanelMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const walletConnected = Boolean(walletAddress)
   const contractConfigured = isAddress(WZKLTC_CONTRACT_ADDRESS)
+  const sourceTokenConfigured = isAddress(ZKLTC_TOKEN_ADDRESS)
   const parsedAmount = Number.parseFloat(sendAmount)
   const normalizedAmount = Number.isFinite(parsedAmount) ? parsedAmount : 0
-  const suggestedMax = Math.max(walletBalance - GAS_BUFFER, 0)
+  const suggestedMax = sourceTokenConfigured ? walletBalance : Math.max(walletBalance - gasReserve, 0)
+  const sourceClient = useMemo(() => {
+    if (!WZKLTC_RPC_URL) return null
+
+    return createPublicClient({
+      transport: http(WZKLTC_RPC_URL),
+    })
+  }, [])
 
   const actionLabel = useMemo(() => {
     if (!contractConfigured) return 'Coming Soon'
@@ -111,7 +138,7 @@ export default function WrappedBridgeModal({
   const connectLabel = isConnecting ? 'Connecting...' : 'Connect Wallet'
 
   useEffect(() => {
-    if (!walletConnected || typeof window === 'undefined' || !window.ethereum?.request) {
+    if (!walletConnected) {
       setWalletBalance(0)
       return undefined
     }
@@ -120,6 +147,44 @@ export default function WrappedBridgeModal({
 
     async function syncWalletState() {
       try {
+        if (sourceClient) {
+          const [chainId, balance] = await Promise.all([
+            sourceClient.getChainId(),
+            sourceTokenConfigured
+              ? sourceClient.readContract({
+                  address: ZKLTC_TOKEN_ADDRESS,
+                  abi: ERC20_BALANCE_ABI,
+                  functionName: 'balanceOf',
+                  args: [walletAddress],
+                })
+              : sourceClient.getBalance({ address: walletAddress }),
+          ])
+
+          if (cancelled) return
+
+          if (sourceTokenConfigured) {
+            const decimals = await sourceClient.readContract({
+              address: ZKLTC_TOKEN_ADDRESS,
+              abi: ERC20_BALANCE_ABI,
+              functionName: 'decimals',
+            })
+
+            if (cancelled) return
+
+            setWalletBalance(Number.parseFloat(formatUnits(balance, decimals)))
+          } else {
+            setWalletBalance(Number.parseFloat(formatEther(balance)))
+          }
+
+          setActiveChainId(chainId)
+          return
+        }
+
+        if (typeof window === 'undefined' || !window.ethereum?.request) {
+          setWalletBalance(0)
+          return
+        }
+
         const [balanceHex, chainHex] = await Promise.all([
           window.ethereum.request({ method: 'eth_getBalance', params: [walletAddress, 'latest'] }),
           window.ethereum.request({ method: 'eth_chainId' }),
@@ -141,7 +206,53 @@ export default function WrappedBridgeModal({
     return () => {
       cancelled = true
     }
-  }, [walletAddress, walletConnected])
+  }, [sourceClient, sourceTokenConfigured, walletAddress, walletConnected])
+
+  useEffect(() => {
+    if (!walletConnected || sourceTokenConfigured || !sourceClient || !contractConfigured) {
+      setGasReserve(0)
+      return undefined
+    }
+
+    let cancelled = false
+
+    async function estimateGasReserve() {
+      try {
+        const data = encodeFunctionData({
+          abi: WRAPPED_ZKLTC_ABI,
+          functionName: 'deposit',
+        })
+
+        const [gasEstimate, feeEstimate] = await Promise.all([
+          sourceClient.estimateGas({
+            account: walletAddress,
+            to: WZKLTC_CONTRACT_ADDRESS,
+            data,
+            value: 0n,
+          }),
+          sourceClient
+            .estimateFeesPerGas()
+            .catch(async () => ({ gasPrice: await sourceClient.getGasPrice() })),
+        ])
+
+        if (cancelled) return
+
+        const feePerGas = feeEstimate.maxFeePerGas ?? feeEstimate.gasPrice ?? 0n
+        const reserveWei = gasEstimate * feePerGas
+        setGasReserve(Number.parseFloat(formatEther(reserveWei)))
+      } catch {
+        if (!cancelled) {
+          setGasReserve(0)
+        }
+      }
+    }
+
+    estimateGasReserve()
+
+    return () => {
+      cancelled = true
+    }
+  }, [contractConfigured, sourceClient, sourceTokenConfigured, walletAddress, walletConnected])
 
   if (!isOpen) return null
 
@@ -195,7 +306,7 @@ export default function WrappedBridgeModal({
       return
     }
 
-    if (normalizedAmount > suggestedMax + GAS_BUFFER) {
+    if (normalizedAmount > suggestedMax) {
       setPanelMessage('Amount is above the spendable wallet balance.')
       return
     }
@@ -323,6 +434,9 @@ export default function WrappedBridgeModal({
                   <button type="button" onClick={() => handlePresetFill(0.75)}>
                     75%
                   </button>
+                  <button type="button" onClick={() => handlePresetFill(1)}>
+                    {sourceTokenConfigured ? 'Max' : 'Max - Gas'}
+                  </button>
                 </div>
                 <button type="button" className="wzkltc-balance-pill" onClick={() => handlePresetFill(1)}>
                   Wallet {formatTokenAmount(walletBalance)}
@@ -347,7 +461,13 @@ export default function WrappedBridgeModal({
               <div className="wzkltc-receive-copy">
                 <strong>{formatTokenAmount(normalizedAmount || 0, 6)}</strong>
                 <span>WZKLTC</span>
-                <small>Minted to your connected wallet.</small>
+                <small>
+                  {sourceTokenConfigured
+                    ? 'Minted to your connected wallet.'
+                    : gasReserve > 0
+                      ? `Minted to your connected wallet. Max leaves about ${formatTokenAmount(gasReserve, 6)} zkLTC for gas.`
+                      : 'Minted to your connected wallet.'}
+                </small>
               </div>
               <NetworkBadge tone="destination" symbol="WZ" label="WZKLTC" sublabel={DESTINATION_CHAIN_NAME} />
             </div>

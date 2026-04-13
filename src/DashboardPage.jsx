@@ -3,6 +3,7 @@ import './DashboardPage.css'
 import WrappedBridgeModal from './WrappedBridgeModal.jsx'
 
 const DOCS_URL = 'https://liteforge.hub.caldera.xyz/'
+const WALLET_DISCONNECTED_KEY = 'ayni_wallet_disconnected'
 
 const SUPPLY_ASSETS = [
   { symbol: 'USDC', name: 'USD Coin', wallet: '1,240.42', apy: '6.12%', collateral: true },
@@ -35,12 +36,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return undefined
 
-    const initialWallet = window.ethereum.selectedAddress ?? ''
+    const manuallyDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
+    const initialWallet = manuallyDisconnected ? '' : (window.ethereum.selectedAddress ?? '')
     setWalletAddress(initialWallet)
     setWalletStatus(initialWallet ? `Connected ${shortAddress(initialWallet)}` : '')
 
     function handleAccountsChanged(accounts) {
-      const nextWallet = accounts?.[0] ?? ''
+      const isDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
+      const nextWallet = isDisconnected ? '' : (accounts?.[0] ?? '')
       setWalletAddress(nextWallet)
       setWalletStatus(nextWallet ? `Connected ${shortAddress(nextWallet)}` : 'Wallet disconnected.')
     }
@@ -57,6 +60,7 @@ export default function DashboardPage() {
 
     setIsConnecting(true)
     try {
+      window.sessionStorage.removeItem(WALLET_DISCONNECTED_KEY)
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
       const nextWallet = accounts?.[0] ?? ''
       setWalletAddress(nextWallet)
@@ -67,6 +71,34 @@ export default function DashboardPage() {
     } finally {
       setIsConnecting(false)
     }
+  }
+
+  async function handleDisconnectWallet() {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(WALLET_DISCONNECTED_KEY, '1')
+    }
+
+    try {
+      await window.ethereum?.request?.({
+        method: 'wallet_revokePermissions',
+        params: [{ eth_accounts: {} }],
+      })
+    } catch {
+      // Most injected wallets do not support programmatic disconnect; clearing the app session is enough here.
+    }
+
+    setWalletAddress('')
+    setWalletStatus('Wallet disconnected.')
+    setIsBridgeOpen(false)
+  }
+
+  async function handleWalletButton() {
+    if (walletAddress) {
+      await handleDisconnectWallet()
+      return
+    }
+
+    await handleConnectWallet()
   }
 
   const walletLabel = walletAddress ? shortAddress(walletAddress) : (isConnecting ? 'Connecting...' : 'Connect Wallet')
@@ -96,7 +128,7 @@ export default function DashboardPage() {
             <button
               type="button"
               className="dashboard-button dashboard-button-ghost"
-              onClick={handleConnectWallet}
+              onClick={handleWalletButton}
               disabled={isConnecting}
             >
               {walletLabel}

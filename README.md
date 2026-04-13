@@ -16,9 +16,11 @@ Copy `.env.example` to `.env` and set the wrapper deployment address before usin
 ```bash
 VITE_WZKLTC_CONTRACT_ADDRESS=0x...
 VITE_WZKLTC_CHAIN_ID=
+VITE_WZKLTC_RPC_URL=https://...
+VITE_ZKLTC_TOKEN_ADDRESS=
 VITE_WZKLTC_SOURCE_CHAIN_NAME=Liteforge
 VITE_WZKLTC_DEST_CHAIN_NAME=Wrapped zkLTC
 VITE_WZKLTC_CONTRACT_LABEL=Wrapped zkLTC
 ```
 
-The modal calls the wrapper contract with the standard WETH-style `deposit()` flow, so minted `WZKLTC` returns to the connected wallet.
+The modal reads the source-side balance through `VITE_WZKLTC_RPC_URL`. If `VITE_ZKLTC_TOKEN_ADDRESS` is set, it reads `balanceOf` from that token; otherwise it reads the native balance on that chain. Minted `WZKLTC` returns to the connected wallet.
