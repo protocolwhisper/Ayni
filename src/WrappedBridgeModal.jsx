@@ -30,8 +30,9 @@ const ERC20_BALANCE_ABI = [
 ]
 
 const WZKLTC_CONTRACT_ADDRESS = import.meta.env.VITE_WZKLTC_CONTRACT_ADDRESS ?? ''
-const WZKLTC_CHAIN_ID = Number.parseInt(import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '', 10) || null
-const WZKLTC_RPC_URL = import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
+const WZKLTC_CHAIN_ID =
+  Number.parseInt(import.meta.env.VITE_PUBLIC_CHAIN_ID ?? import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '', 10) || null
+const WZKLTC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL ?? import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
 const ZKLTC_TOKEN_ADDRESS = import.meta.env.VITE_ZKLTC_TOKEN_ADDRESS ?? ''
 const SOURCE_CHAIN_NAME = import.meta.env.VITE_WZKLTC_SOURCE_CHAIN_NAME ?? 'Liteforge'
 const DESTINATION_CHAIN_NAME = import.meta.env.VITE_WZKLTC_DEST_CHAIN_NAME ?? 'Wrapped zkLTC'

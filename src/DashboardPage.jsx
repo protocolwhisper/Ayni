@@ -16,12 +16,12 @@ const DOCS_URL = 'https://liteforge.hub.caldera.xyz/'
 const WALLET_DISCONNECTED_KEY = 'ayni_wallet_disconnected'
 const MAX_HEALTH_FACTOR = (1n << 256n) - 1n
 
+const PUBLIC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL ?? import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
+const PUBLIC_CHAIN_ID =
+  Number.parseInt(import.meta.env.VITE_PUBLIC_CHAIN_ID ?? import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '', 10) || null
 const AYNI_PROTOCOL_ADDRESS = import.meta.env.VITE_AYNI_PROTOCOL_ADDRESS ?? ''
-const AYNI_RPC_URL = import.meta.env.VITE_AYNI_RPC_URL ?? import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
-const AYNI_CHAIN_ID = Number.parseInt(
-  import.meta.env.VITE_AYNI_CHAIN_ID ?? import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '',
-  10,
-) || null
+const AYNI_RPC_URL = import.meta.env.VITE_AYNI_RPC_URL ?? PUBLIC_RPC_URL
+const AYNI_CHAIN_ID = Number.parseInt(import.meta.env.VITE_AYNI_CHAIN_ID ?? '', 10) || PUBLIC_CHAIN_ID
 const AYNI_NETWORK_NAME = import.meta.env.VITE_AYNI_NETWORK_NAME ?? 'LitVM Testnet'
 const COLLATERAL_TOKEN_ADDRESS =
   import.meta.env.VITE_AYNI_COLLATERAL_TOKEN_ADDRESS ?? import.meta.env.VITE_WZKLTC_CONTRACT_ADDRESS ?? ''
