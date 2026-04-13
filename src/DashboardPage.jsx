@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import './DashboardPage.css'
+import WrappedBridgeModal from './WrappedBridgeModal.jsx'
 
-const BRIDGE_URL = 'https://liteforge.hub.caldera.xyz/'
+const DOCS_URL = 'https://liteforge.hub.caldera.xyz/'
 
 const SUPPLY_ASSETS = [
   { symbol: 'USDC', name: 'USD Coin', wallet: '1,240.42', apy: '6.12%', collateral: true },
@@ -27,6 +28,7 @@ function shortAddress(address) {
 
 export default function DashboardPage() {
   const [isConnecting, setIsConnecting] = useState(false)
+  const [isBridgeOpen, setIsBridgeOpen] = useState(false)
   const [walletStatus, setWalletStatus] = useState('')
   const [walletAddress, setWalletAddress] = useState('')
 
@@ -73,6 +75,13 @@ export default function DashboardPage() {
   const healthFactorLabel = '--'
   const healthFactorStatus = 'No borrow yet'
 
+  function handleOpenBridge() {
+    setIsBridgeOpen(true)
+    if (!walletAddress) {
+      setWalletStatus('Connect your wallet to wrap zkLTC.')
+    }
+  }
+
   return (
     <main className="dashboard-page">
       <div className="dashboard-shell">
@@ -81,9 +90,9 @@ export default function DashboardPage() {
             Back to main page
           </a>
           <div className="dashboard-actions">
-            <a className="dashboard-button dashboard-button-primary" href={BRIDGE_URL} target="_blank" rel="noreferrer">
-              Get USDC
-            </a>
+            <button type="button" className="dashboard-button dashboard-button-primary" onClick={handleOpenBridge}>
+              Get WZKLTC
+            </button>
             <button
               type="button"
               className="dashboard-button dashboard-button-ghost"
@@ -225,16 +234,24 @@ export default function DashboardPage() {
                 <span>◈</span>
               </div>
               <div>
-                <h2>Learn about Ayni Protocol</h2>
+                <h2>Wrap native zkLTC into WZKLTC</h2>
               </div>
             </div>
-            <a className="dashboard-link-card-button" href={BRIDGE_URL} target="_blank" rel="noreferrer">
+            <a className="dashboard-link-card-button" href={DOCS_URL} target="_blank" rel="noreferrer">
               <span className="dashboard-link-card-button-icon">?</span>
               How it works
             </a>
           </article>
         </section>
       </div>
+
+      <WrappedBridgeModal
+        isOpen={isBridgeOpen}
+        onClose={() => setIsBridgeOpen(false)}
+        walletAddress={walletAddress}
+        onConnectWallet={handleConnectWallet}
+        isConnecting={isConnecting}
+      />
     </main>
   )
 }
