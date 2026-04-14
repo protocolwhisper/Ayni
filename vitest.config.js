@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.js'],
+    exclude: ['tests/e2e/**', 'node_modules/**'],
     env: {
       VITE_PUBLIC_RPC_URL: 'https://liteforge.rpc.caldera.xyz/http',
       VITE_PUBLIC_CHAIN_ID: '4441',
