@@ -813,7 +813,7 @@ export default function SolverDashboardPage() {
           <div>
             <p className="dashboard-mini-modal-kicker">Solver liquidity</p>
             <h1>{solverState.poolName}</h1>
-            <p>Deposit {solverState.assetSymbol} into the pool, monitor utilization, and fill open borrower orders.</p>
+            <p>Deposit {solverState.assetSymbol}, monitor utilization, and fill open borrower orders.</p>
           </div>
           <div className="solver-hero-metrics">
             <span>Total assets</span>
@@ -890,7 +890,7 @@ export default function SolverDashboardPage() {
               </div>
             </label>
             <button type="button" className="dashboard-button dashboard-button-primary solver-wide-button" onClick={handleDeposit} disabled={pendingAction === 'deposit'}>
-              {pendingAction === 'deposit' ? 'Depositing...' : `Deposit ${solverState.assetSymbol}`}
+              {pendingAction === 'deposit' ? 'Depositing...' : 'Deposit'}
             </button>
 
             <div className="solver-action-split">
@@ -916,7 +916,7 @@ export default function SolverDashboardPage() {
               </div>
             </label>
             <button type="button" className="dashboard-button dashboard-button-primary solver-wide-button" onClick={handleRedeem} disabled={pendingAction === 'redeem'}>
-              {pendingAction === 'redeem' ? 'Redeeming...' : `Redeem ${solverState.poolSymbol}`}
+              {pendingAction === 'redeem' ? 'Redeeming...' : 'Redeem'}
             </button>
           </article>
         </section>

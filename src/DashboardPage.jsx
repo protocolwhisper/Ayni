@@ -51,7 +51,7 @@ const COLLATERAL_TOKEN_ADDRESS =
 const DEBT_TOKEN_ADDRESS = import.meta.env.VITE_AYNI_DEBT_TOKEN_ADDRESS || ''
 
 const COLLATERAL_ASSET = {
-  symbol: 'WZKLTC',
+  symbol: 'WzkLTC',
   name: 'Wrapped zkLTC',
   apy: '0.00%',
   collateral: true,
@@ -765,7 +765,7 @@ export default function DashboardPage() {
     }
 
     if (isSupply && amount > dashboardState.walletBalance) {
-      setActionModal((current) => ({ ...current, error: 'Supply amount is above your WZKLTC balance.' }))
+      setActionModal((current) => ({ ...current, error: 'Supply amount is above your WzkLTC balance.' }))
       return
     }
 
@@ -984,10 +984,10 @@ export default function DashboardPage() {
   const borrowNotice = !walletAddress
     ? 'Connect wallet to check how much USDC you can borrow.'
     : dashboardState.userCollateral === 0n
-      ? 'To borrow you need to supply WZKLTC as collateral.'
+      ? 'To borrow you need to supply WzkLTC as collateral.'
       : dashboardState.marketPaused
         ? 'Borrowing is currently paused for this market.'
-        : 'Borrow against your supplied WZKLTC.'
+        : 'Borrow against your supplied WzkLTC.'
   const supplyRows =
     showZeroBalances || dashboardState.walletBalance > 0n || dashboardState.userCollateral > 0n
       ? [COLLATERAL_ASSET]
@@ -1090,7 +1090,7 @@ export default function DashboardPage() {
               Solver dashboard
             </a>
             <button type="button" className="dashboard-button dashboard-button-primary" onClick={handleOpenBridge}>
-              Get WZKLTC
+              Get WzkLTC
             </button>
             <button
               type="button"
@@ -1320,7 +1320,7 @@ export default function DashboardPage() {
                 <span>◈</span>
               </div>
               <div>
-                <h2>Wrap native zkLTC into WZKLTC</h2>
+                <h2>Wrap native zkLTC into WzkLTC</h2>
               </div>
             </div>
             <a className="dashboard-link-card-button" href={DOCS_URL} target="_blank" rel="noreferrer">

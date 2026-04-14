@@ -1,37 +1,60 @@
 .solver-page .dashboard-shell {
-  max-width: 1180px;
+  width: min(1120px, calc(100vw - 28px));
+  padding: 16px 0 28px;
+}
+
+.solver-page .dashboard-header {
+  margin-bottom: 10px;
+}
+
+.solver-page .dashboard-back-link,
+.solver-page .dashboard-button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.88rem;
+}
+
+.solver-page .lending-card {
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.solver-page .lending-card h2,
+.solver-page .lending-card h3 {
+  font-size: 0.96rem;
 }
 
 .solver-hero {
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  gap: 18px;
   align-items: stretch;
 }
 
 .solver-hero h1 {
-  margin: 4px 0 10px;
+  margin: 2px 0 8px;
   font-family: var(--sky-display);
-  font-size: clamp(2rem, 5vw, 4rem);
+  font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1;
   letter-spacing: 0;
 }
 
 .solver-hero p {
   margin: 0;
-  max-width: 62ch;
+  max-width: 56ch;
   color: var(--muted);
-  line-height: 1.55;
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
 .solver-hero-metrics {
-  min-width: 260px;
+  min-width: 220px;
   border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 18px;
+  border-radius: 14px;
+  padding: 14px;
   display: grid;
   align-content: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -40,35 +63,35 @@
 .solver-position-list span,
 .solver-config-list span {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .solver-hero-metrics strong {
-  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
 }
 
 .solver-grid {
-  margin-top: 24px;
+  margin-top: 14px;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .solver-grid-wide {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(260px, 0.9fr) minmax(360px, 1.1fr);
 }
 
 .solver-metric-card {
-  min-height: 168px;
+  min-height: 126px;
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 8px;
 }
 
 .solver-metric-card strong {
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
   line-height: 1;
 }
 
@@ -76,7 +99,8 @@
 .solver-panel-copy {
   margin: 0;
   color: var(--muted);
-  line-height: 1.45;
+  font-size: 0.84rem;
+  line-height: 1.35;
 }
 
 .solver-panel {
@@ -86,46 +110,73 @@
 .solver-position-list,
 .solver-config-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .solver-position-list div,
 .solver-config-list div {
   border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
   display: grid;
-  gap: 6px;
+  gap: 4px;
   background: rgba(255, 255, 255, 0.03);
 }
 
 .solver-position-list strong,
 .solver-config-list strong {
+  font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
 
 .solver-input-wrap {
-  margin-top: 14px;
+  margin-top: 10px;
+}
+
+.solver-input-wrap .dashboard-action-input-row {
+  gap: 8px;
+  min-width: 0;
+}
+
+.solver-input-wrap .dashboard-action-input {
+  min-height: 44px;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 1rem;
+  min-width: 0;
+}
+
+.solver-input-wrap .dashboard-action-inline {
+  min-height: 34px;
+  min-width: 56px;
+  flex: 0 0 auto;
 }
 
 .solver-wide-button {
   width: 100%;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .solver-action-split {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .solver-order-input {
-  font-size: clamp(1rem, 2vw, 1.2rem);
-  min-height: 44px;
+  font-size: 0.92rem;
+  min-height: 42px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1180px) {
+  .solver-grid,
+  .solver-grid-wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
   .solver-hero,
   .solver-grid,
   .solver-grid-wide,
