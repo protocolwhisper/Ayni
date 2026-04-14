@@ -32,17 +32,23 @@ import {
 
 const DOCS_URL = 'https://liteforge.hub.caldera.xyz/'
 const WALLET_DISCONNECTED_KEY = 'ayni_wallet_disconnected'
+const DEFAULT_PUBLIC_RPC_URL = 'https://liteforge.rpc.caldera.xyz/http'
+const DEFAULT_PUBLIC_CHAIN_ID = 4441
+const DEFAULT_WZKLTC_CONTRACT_ADDRESS = '0xdB7a824F2662585dd452021801cdEBF0A4b8586e'
 
-const PUBLIC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL ?? import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
+const PUBLIC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL || import.meta.env.VITE_WZKLTC_RPC_URL || DEFAULT_PUBLIC_RPC_URL
 const PUBLIC_CHAIN_ID =
-  Number.parseInt(import.meta.env.VITE_PUBLIC_CHAIN_ID ?? import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '', 10) || null
+  Number.parseInt(import.meta.env.VITE_PUBLIC_CHAIN_ID || import.meta.env.VITE_WZKLTC_CHAIN_ID || '', 10) ||
+  DEFAULT_PUBLIC_CHAIN_ID
 const AYNI_PROTOCOL_ADDRESS = import.meta.env.VITE_AYNI_PROTOCOL_ADDRESS ?? ''
-const AYNI_RPC_URL = import.meta.env.VITE_AYNI_RPC_URL ?? PUBLIC_RPC_URL
-const AYNI_CHAIN_ID = Number.parseInt(import.meta.env.VITE_AYNI_CHAIN_ID ?? '', 10) || PUBLIC_CHAIN_ID
+const AYNI_RPC_URL = import.meta.env.VITE_AYNI_RPC_URL || PUBLIC_RPC_URL
+const AYNI_CHAIN_ID = Number.parseInt(import.meta.env.VITE_AYNI_CHAIN_ID || '', 10) || PUBLIC_CHAIN_ID
 const AYNI_NETWORK_NAME = import.meta.env.VITE_AYNI_NETWORK_NAME ?? 'LitVM Testnet'
 const COLLATERAL_TOKEN_ADDRESS =
-  import.meta.env.VITE_AYNI_COLLATERAL_TOKEN_ADDRESS ?? import.meta.env.VITE_WZKLTC_CONTRACT_ADDRESS ?? ''
-const DEBT_TOKEN_ADDRESS = import.meta.env.VITE_AYNI_DEBT_TOKEN_ADDRESS ?? ''
+  import.meta.env.VITE_AYNI_COLLATERAL_TOKEN_ADDRESS ||
+  import.meta.env.VITE_WZKLTC_CONTRACT_ADDRESS ||
+  DEFAULT_WZKLTC_CONTRACT_ADDRESS
+const DEBT_TOKEN_ADDRESS = import.meta.env.VITE_AYNI_DEBT_TOKEN_ADDRESS || ''
 
 const COLLATERAL_ASSET = {
   symbol: 'WZKLTC',
@@ -258,19 +264,17 @@ export default function DashboardPage() {
   const [refreshNonce, setRefreshNonce] = useState(0)
   const [dashboardState, setDashboardState] = useState(createEmptyDashboardState)
 
+  const tokenBalanceConfigured = Boolean(AYNI_RPC_URL) && isAddress(COLLATERAL_TOKEN_ADDRESS)
   const protocolConfigured =
-    Boolean(AYNI_RPC_URL) &&
-    isAddress(AYNI_PROTOCOL_ADDRESS) &&
-    isAddress(COLLATERAL_TOKEN_ADDRESS) &&
-    isAddress(DEBT_TOKEN_ADDRESS)
+    tokenBalanceConfigured && isAddress(AYNI_PROTOCOL_ADDRESS) && isAddress(DEBT_TOKEN_ADDRESS)
 
   const publicClient = useMemo(() => {
-    if (!protocolConfigured) return null
+    if (!tokenBalanceConfigured) return null
 
     return createPublicClient({
       transport: http(AYNI_RPC_URL),
     })
-  }, [protocolConfigured])
+  }, [tokenBalanceConfigured])
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return undefined
@@ -319,6 +323,37 @@ export default function DashboardPage() {
       }
 
       try {
+        if (!protocolConfigured) {
+          const [protocolChainId, collateralDecimals, walletBalance] = await Promise.all([
+            publicClient.getChainId(),
+            publicClient.readContract({
+              address: COLLATERAL_TOKEN_ADDRESS,
+              abi: ERC20_ABI,
+              functionName: 'decimals',
+            }),
+            walletAddress
+              ? publicClient.readContract({
+                  address: COLLATERAL_TOKEN_ADDRESS,
+                  abi: ERC20_ABI,
+                  functionName: 'balanceOf',
+                  args: [walletAddress],
+                })
+              : Promise.resolve(0n),
+          ])
+
+          if (cancelled) return
+
+          setDashboardState({
+            ...createEmptyDashboardState(),
+            protocolChainId,
+            collateralDecimals,
+            walletBalance,
+            loading: false,
+            ready: false,
+          })
+          return
+        }
+
         const [protocolChainId, collateralDecimals, debtDecimals, marketAddress] = await Promise.all([
           publicClient.getChainId(),
           publicClient.readContract({
@@ -476,7 +511,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [publicClient, refreshNonce, walletAddress])
+  }, [protocolConfigured, publicClient, refreshNonce, walletAddress])
 
   async function handleConnectWallet() {
     if (typeof window === 'undefined' || !window.ethereum?.request) {
@@ -1051,6 +1086,9 @@ export default function DashboardPage() {
             Back to main page
           </a>
           <div className="dashboard-actions">
+            <a className="dashboard-button dashboard-button-ghost" href="/solver/">
+              Solver dashboard
+            </a>
             <button type="button" className="dashboard-button dashboard-button-primary" onClick={handleOpenBridge}>
               Get WZKLTC
             </button>
@@ -1068,6 +1106,11 @@ export default function DashboardPage() {
         {walletStatus ? <p className="wallet-status">{walletStatus}</p> : null}
         {dashboardMessage.text ? (
           <p className={`dashboard-status dashboard-status-${dashboardMessage.tone || 'neutral'}`}>{dashboardMessage.text}</p>
+        ) : null}
+        {!protocolConfigured ? (
+          <p className="dashboard-status dashboard-status-warning">
+            Dashboard balances need protocol and USDC addresses in the deployment config.
+          </p>
         ) : null}
 
         <section className="lending-grid">

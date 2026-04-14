@@ -1,0 +1,143 @@
+.solver-page .dashboard-shell {
+  max-width: 1180px;
+}
+
+.solver-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.solver-hero h1 {
+  margin: 4px 0 10px;
+  font-family: var(--sky-display);
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.solver-hero p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.solver-hero-metrics {
+  min-width: 260px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 18px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.solver-hero-metrics span,
+.solver-metric-card span,
+.solver-position-list span,
+.solver-config-list span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.solver-hero-metrics strong {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+}
+
+.solver-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.solver-grid-wide {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.solver-metric-card {
+  min-height: 168px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.solver-metric-card strong {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1;
+}
+
+.solver-metric-card p,
+.solver-panel-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.solver-panel {
+  min-height: 100%;
+}
+
+.solver-position-list,
+.solver-config-list {
+  display: grid;
+  gap: 12px;
+}
+
+.solver-position-list div,
+.solver-config-list div {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.solver-position-list strong,
+.solver-config-list strong {
+  overflow-wrap: anywhere;
+}
+
+.solver-input-wrap {
+  margin-top: 14px;
+}
+
+.solver-wide-button {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.solver-action-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.solver-order-input {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  min-height: 44px;
+}
+
+@media (max-width: 900px) {
+  .solver-hero,
+  .solver-grid,
+  .solver-grid-wide,
+  .solver-action-split {
+    grid-template-columns: 1fr;
+  }
+
+  .solver-hero {
+    display: grid;
+  }
+
+  .solver-hero-metrics {
+    min-width: 0;
+  }
+}

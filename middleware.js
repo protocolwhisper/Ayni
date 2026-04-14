@@ -1,4 +1,5 @@
-const DASHBOARD_PASSWORD_ENABLED = process.env.DASHBOARD_PASSWORD_ENABLED === 'true'
+const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD ?? ''
+const DASHBOARD_PASSWORD_ENABLED = process.env.DASHBOARD_PASSWORD_ENABLED !== 'false' && Boolean(DASHBOARD_PASSWORD)
 const DASHBOARD_ACCESS_COOKIE = 'ayni_dashboard_access'
 
 function hasAccessCookie(cookieHeader) {
@@ -26,13 +27,14 @@ export default function middleware(request) {
 
   if (pathname.startsWith('/dashboard-login')) {
     if (hasAccess) {
-      return Response.redirect(new URL('/dashboard/', request.url), 302)
+      const next = url.searchParams.get('next')
+      return Response.redirect(new URL(next?.startsWith('/') ? next : '/dashboard/', request.url), 302)
     }
 
     return
   }
 
-  if (pathname.startsWith('/dashboard') && !hasAccess) {
+  if ((pathname.startsWith('/dashboard') || pathname.startsWith('/solver')) && !hasAccess) {
     const loginUrl = new URL('/dashboard-login/', request.url)
     loginUrl.searchParams.set('next', pathname + search)
     return Response.redirect(loginUrl, 302)
@@ -40,5 +42,13 @@ export default function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/dashboard/:path*', '/dashboard-login', '/dashboard-login/:path*', '/api/dashboard-auth'],
+  matcher: [
+    '/dashboard',
+    '/dashboard/:path*',
+    '/solver',
+    '/solver/:path*',
+    '/dashboard-login',
+    '/dashboard-login/:path*',
+    '/api/dashboard-auth',
+  ],
 }
