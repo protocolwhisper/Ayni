@@ -1,16 +1,22 @@
+/* global process */
+
+import {
+  buildDashboardLogoutCookie,
+  getDashboardSessionTokenFromCookie,
+  verifyDashboardSessionToken,
+} from './api/_lib/dashboardSession.js'
+
 const DASHBOARD_PASSWORD_ENABLED = process.env.DASHBOARD_PASSWORD_ENABLED === 'true'
-const DASHBOARD_ACCESS_COOKIE = 'ayni_dashboard_access'
 
-function hasAccessCookie(cookieHeader) {
-  if (!cookieHeader) return false
-
-  return cookieHeader
-    .split(';')
-    .map((part) => part.trim())
-    .some((part) => part === `${DASHBOARD_ACCESS_COOKIE}=1`)
+function redirectTo(url, clearCookie = false) {
+  const response = Response.redirect(url, 302)
+  if (clearCookie) {
+    response.headers.set('Set-Cookie', buildDashboardLogoutCookie())
+  }
+  return response
 }
 
-export default function middleware(request) {
+export default async function middleware(request) {
   if (!DASHBOARD_PASSWORD_ENABLED) {
     return
   }
@@ -18,15 +24,17 @@ export default function middleware(request) {
   const url = new URL(request.url)
   const { pathname, search } = url
 
-  if (pathname.startsWith('/api/dashboard-auth')) {
+  if (pathname.startsWith('/api/dashboard-auth') || pathname.startsWith('/api/dashboard-logout')) {
     return
   }
 
-  const hasAccess = hasAccessCookie(request.headers.get('cookie'))
+  const sessionToken = getDashboardSessionTokenFromCookie(request.headers.get('cookie'))
+  const session = await verifyDashboardSessionToken(sessionToken)
+  const hasAccess = session.valid
 
   if (pathname.startsWith('/dashboard-login')) {
     if (hasAccess) {
-      return Response.redirect(new URL('/dashboard/', request.url), 302)
+      return redirectTo(new URL('/dashboard/', request.url), false)
     }
 
     return
@@ -35,7 +43,7 @@ export default function middleware(request) {
   if (pathname.startsWith('/dashboard') && !hasAccess) {
     const loginUrl = new URL('/dashboard-login/', request.url)
     loginUrl.searchParams.set('next', pathname + search)
-    return Response.redirect(loginUrl, 302)
+    return redirectTo(loginUrl, Boolean(sessionToken))
   }
 }
 

@@ -246,6 +246,7 @@ function createEmptyDashboardState() {
 
 export default function DashboardPage() {
   const [isConnecting, setIsConnecting] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isBridgeOpen, setIsBridgeOpen] = useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [actionModal, setActionModal] = useState({ type: '', value: '', error: '' })
@@ -528,6 +529,17 @@ export default function DashboardPage() {
     }
 
     await handleConnectWallet()
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true)
+    try {
+      await fetch('/api/dashboard-logout', {
+        method: 'POST',
+      })
+    } finally {
+      window.location.assign('/dashboard-login/')
+    }
   }
 
   function handleOpenBridge() {
@@ -1051,6 +1063,14 @@ export default function DashboardPage() {
             Back to main page
           </a>
           <div className="dashboard-actions">
+            <button
+              type="button"
+              className="dashboard-button dashboard-button-ghost"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? 'Logging out...' : 'Log out'}
+            </button>
             <button type="button" className="dashboard-button dashboard-button-primary" onClick={handleOpenBridge}>
               Get WZKLTC
             </button>

@@ -17,9 +17,17 @@ Landing CTAs route to `/dashboard/`. If you want the dashboard protected before 
 DASHBOARD_PASSWORD_ENABLED=true
 DASHBOARD_PASSWORD=your-password
 DASHBOARD_USERNAME=
+DASHBOARD_SESSION_SECRET=replace-with-a-long-random-secret
 ```
 
-These values are read by `middleware.js`, so they are not bundled into the browser. Leave `DASHBOARD_PASSWORD_ENABLED=false` to keep the dashboard open.
+These values are read by `middleware.js` and the server API routes, so they are not bundled into the browser. `DASHBOARD_SESSION_SECRET` signs and verifies the dashboard session cookie; use a long random value (for example `openssl rand -base64 48`).
+
+Security behavior when the gate is enabled:
+- `/dashboard/*` requires a valid signed session cookie.
+- Failed logins are throttled per client IP.
+- Logout clears the dashboard session cookie via `/api/dashboard-logout`.
+
+Leave `DASHBOARD_PASSWORD_ENABLED=false` to keep the dashboard open.
 
 ## Protocol config
 
