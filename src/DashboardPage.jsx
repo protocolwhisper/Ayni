@@ -12,6 +12,15 @@ import {
 import './DashboardPage.css'
 import WrappedBridgeModal from './WrappedBridgeModal.jsx'
 import {
+  calculateEncumberedCollateral,
+  calculateMaxWithdrawableCollateral,
+  calculateProjectedHealthFactorAfterWithdraw,
+  calculateRepayCap,
+  validateRepayAmount,
+  validateWithdrawAmount,
+  WITHDRAW_HEALTH_FACTOR_MIN,
+} from './lendingMath.js'
+import {
   MAX_HEALTH_FACTOR,
   formatHealthFactorLabel,
   formatTokenAmount,
@@ -23,7 +32,6 @@ import {
 
 const DOCS_URL = 'https://liteforge.hub.caldera.xyz/'
 const WALLET_DISCONNECTED_KEY = 'ayni_wallet_disconnected'
-const WITHDRAW_HEALTH_FACTOR_MIN = parseUnits('1.2', 18)
 
 const PUBLIC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL ?? import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
 const PUBLIC_CHAIN_ID =
@@ -635,7 +643,7 @@ export default function DashboardPage() {
   }
 
   function handleSetRepayMax() {
-    const repayCap = minBigInt(dashboardState.userDebt, dashboardState.debtWalletBalance)
+    const repayCap = calculateRepayCap(dashboardState.userDebt, dashboardState.debtWalletBalance)
     if (repayCap <= 0n) {
       setActionModal((current) => ({ ...current, error: `You don't have repayable ${DEBT_ASSET.symbol} right now.` }))
       return
@@ -646,26 +654,6 @@ export default function DashboardPage() {
       value: formatUnits(repayCap, dashboardState.debtDecimals),
       error: '',
     }))
-  }
-
-  function calculateMaxWithdrawable() {
-    const { userCollateral, userDebt, healthFactor } = dashboardState
-    if (userCollateral <= 0n) return 0n
-    if (userDebt <= 0n) return userCollateral
-    if (healthFactor <= WITHDRAW_HEALTH_FACTOR_MIN) return 0n
-
-    const requiredCollateral = (userCollateral * WITHDRAW_HEALTH_FACTOR_MIN + (healthFactor - 1n)) / healthFactor
-    if (requiredCollateral >= userCollateral) return 0n
-    return userCollateral - requiredCollateral
-  }
-
-  function calculateProjectedHealthFactor(withdrawAmount) {
-    if (dashboardState.userDebt <= 0n) return MAX_HEALTH_FACTOR
-    if (dashboardState.userCollateral <= 0n) return 0n
-    const remainingCollateral = dashboardState.userCollateral > withdrawAmount
-      ? dashboardState.userCollateral - withdrawAmount
-      : 0n
-    return (dashboardState.healthFactor * remainingCollateral) / dashboardState.userCollateral
   }
 
   async function handleWithdraw() {
@@ -693,7 +681,11 @@ export default function DashboardPage() {
   }
 
   function handleSetWithdrawMax() {
-    const withdrawCap = calculateMaxWithdrawable()
+    const withdrawCap = calculateMaxWithdrawableCollateral({
+      userCollateral: dashboardState.userCollateral,
+      userDebt: dashboardState.userDebt,
+      healthFactor: dashboardState.healthFactor,
+    })
     if (withdrawCap <= 0n) {
       setActionModal((current) => ({
         ...current,
@@ -742,21 +734,40 @@ export default function DashboardPage() {
       return
     }
 
-    const maxWithdrawable = calculateMaxWithdrawable()
-    if (isWithdraw && amount > dashboardState.userCollateral) {
+    const maxWithdrawable = calculateMaxWithdrawableCollateral({
+      userCollateral: dashboardState.userCollateral,
+      userDebt: dashboardState.userDebt,
+      healthFactor: dashboardState.healthFactor,
+    })
+    const projectedHealthFactor = calculateProjectedHealthFactorAfterWithdraw({
+      userCollateral: dashboardState.userCollateral,
+      userDebt: dashboardState.userDebt,
+      healthFactor: dashboardState.healthFactor,
+      withdrawAmount: amount,
+      maxHealthFactor: MAX_HEALTH_FACTOR,
+    })
+    const withdrawValidationError = isWithdraw
+      ? validateWithdrawAmount({
+          amount,
+          userCollateral: dashboardState.userCollateral,
+          maxWithdrawable,
+          projectedHealthFactor,
+          minHealthFactor: WITHDRAW_HEALTH_FACTOR_MIN,
+        })
+      : ''
+
+    if (withdrawValidationError === 'above_collateral') {
       setActionModal((current) => ({ ...current, error: 'Withdraw amount is above your supplied collateral.' }))
       return
     }
-
-    if (isWithdraw && amount > maxWithdrawable) {
+    if (withdrawValidationError === 'above_safe_max') {
       setActionModal((current) => ({
         ...current,
         error: `Withdraw amount exceeds the safe maximum at health factor ${formatHealthFactorLabel(WITHDRAW_HEALTH_FACTOR_MIN)}.`,
       }))
       return
     }
-
-    if (isWithdraw && calculateProjectedHealthFactor(amount) < WITHDRAW_HEALTH_FACTOR_MIN) {
+    if (withdrawValidationError === 'below_min_health') {
       setActionModal((current) => ({
         ...current,
         error: `Withdraw amount would drop health factor below ${formatHealthFactorLabel(WITHDRAW_HEALTH_FACTOR_MIN)}.`,
@@ -770,13 +781,22 @@ export default function DashboardPage() {
       return
     }
 
-    if (isRepay && amount > dashboardState.userDebt) {
+    const repayValidationError = isRepay
+      ? validateRepayAmount({
+          amount,
+          userDebt: dashboardState.userDebt,
+          debtWalletBalance: dashboardState.debtWalletBalance,
+        })
+      : ''
+    if (repayValidationError === 'above_debt') {
       setActionModal((current) => ({ ...current, error: 'Repay amount is above your outstanding debt.' }))
       return
     }
-
-    if (isRepay && amount > dashboardState.debtWalletBalance) {
-      setActionModal((current) => ({ ...current, error: `Repay amount is above your ${DEBT_ASSET.symbol} wallet balance.` }))
+    if (repayValidationError === 'above_wallet_balance') {
+      setActionModal((current) => ({
+        ...current,
+        error: `Repay amount is above your ${DEBT_ASSET.symbol} wallet balance.`,
+      }))
       return
     }
 
@@ -918,7 +938,13 @@ export default function DashboardPage() {
     ? minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
     : dashboardState.availableLiquidity
   const repayAvailable = walletAddress ? minBigInt(dashboardState.userDebt, dashboardState.debtWalletBalance) : 0n
-  const withdrawAvailable = walletAddress ? calculateMaxWithdrawable() : 0n
+  const withdrawAvailable = walletAddress
+    ? calculateMaxWithdrawableCollateral({
+        userCollateral: dashboardState.userCollateral,
+        userDebt: dashboardState.userDebt,
+        healthFactor: dashboardState.healthFactor,
+      })
+    : 0n
   const collateralApyLabel = `${formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}%`
   const borrowNotice = !walletAddress
     ? 'Connect wallet to check how much USDC you can borrow.'
@@ -1096,7 +1122,7 @@ export default function DashboardPage() {
                   <span className="position-meta-subtle position-meta-label">Encumbered:</span>
                   <span className="position-meta-subtle position-meta-value">
                     {formatTokenAmount(
-                      dashboardState.userCollateral > withdrawAvailable ? dashboardState.userCollateral - withdrawAvailable : 0n,
+                      calculateEncumberedCollateral(dashboardState.userCollateral, withdrawAvailable),
                       dashboardState.collateralDecimals,
                       6,
                     )}{' '}
