@@ -1111,7 +1111,7 @@ export default function DashboardPage() {
                   </div>
                   <button
                     type="button"
-                    className="dashboard-button dashboard-button-ghost position-action-button"
+                    className="dashboard-button dashboard-button-primary position-action-button"
                     onClick={handleWithdraw}
                     disabled={!protocolConfigured || pendingAction === 'withdraw'}
                   >
@@ -1151,7 +1151,7 @@ export default function DashboardPage() {
                   </strong>
                   <button
                     type="button"
-                    className="dashboard-button dashboard-button-ghost position-action-button"
+                    className="dashboard-button dashboard-button-primary position-action-button"
                     onClick={handleRepay}
                     disabled={!protocolConfigured || pendingAction === 'repay'}
                   >
