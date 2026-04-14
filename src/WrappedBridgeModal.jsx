@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPublicClient, encodeFunctionData, formatEther, formatUnits, http, isAddress, parseEther } from 'viem'
 import './WrappedBridgeModal.css'
+import { hexValue, shortAddress } from './utils.js'
 
 const WRAPPED_ZKLTC_ABI = [
   {
@@ -47,14 +48,6 @@ function formatTokenAmount(value, maximumFractionDigits = 4) {
   })
 }
 
-function shortAddress(value) {
-  if (!value) return ''
-  return `${value.slice(0, 6)}...${value.slice(-4)}`
-}
-
-function hexValue(value) {
-  return `0x${value.toString(16)}`
-}
 
 function BridgeGlyph() {
   return (
