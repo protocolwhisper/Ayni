@@ -1,10 +1,10 @@
 .solver-page .dashboard-shell {
   width: min(1120px, calc(100vw - 28px));
-  padding: 16px 0 28px;
+  padding: 12px 0 18px;
 }
 
 .solver-page .dashboard-header {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .solver-page .dashboard-back-link,
@@ -15,83 +15,91 @@
 }
 
 .solver-page .lending-card {
-  border-radius: 14px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 11px 12px;
 }
 
 .solver-page .lending-card h2,
 .solver-page .lending-card h3 {
-  font-size: 0.96rem;
+  font-size: 0.9rem;
+  line-height: 1.2;
 }
 
 .solver-hero {
   display: flex;
   justify-content: space-between;
-  gap: 18px;
-  align-items: stretch;
+  gap: 14px;
+  align-items: center;
+  min-height: 132px;
+}
+
+.solver-hero-copy {
+  min-width: 0;
 }
 
 .solver-hero h1 {
-  margin: 2px 0 8px;
+  margin: 1px 0 5px;
   font-family: var(--sky-display);
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  line-height: 0.98;
   letter-spacing: 0;
+  max-width: 16ch;
 }
 
 .solver-hero p {
   margin: 0;
-  max-width: 56ch;
+  max-width: 48ch;
   color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.4;
+  font-size: 0.8rem;
+  line-height: 1.3;
 }
 
 .solver-hero-metrics {
-  min-width: 220px;
+  min-width: 180px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 14px;
+  padding: 10px 12px;
   display: grid;
   align-content: center;
-  gap: 6px;
+  gap: 3px;
   background: rgba(255, 255, 255, 0.03);
 }
 
 .solver-hero-metrics span,
 .solver-metric-card span,
 .solver-position-list span,
-.solver-config-list span {
+.solver-config-list span,
+.solver-input-wrap > span {
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .solver-hero-metrics strong {
-  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+  font-size: clamp(1rem, 1.75vw, 1.2rem);
 }
 
 .solver-grid {
-  margin-top: 14px;
+  margin-top: 10px;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 9px;
 }
 
 .solver-grid-wide {
-  grid-template-columns: minmax(260px, 0.9fr) minmax(360px, 1.1fr);
+  grid-template-columns: minmax(320px, 0.9fr) minmax(440px, 1.1fr);
 }
 
 .solver-metric-card {
-  min-height: 126px;
+  min-height: 86px;
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 4px;
 }
 
 .solver-metric-card strong {
-  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+  font-size: clamp(1.05rem, 1.7vw, 1.35rem);
   line-height: 1;
 }
 
@@ -99,74 +107,102 @@
 .solver-panel-copy {
   margin: 0;
   color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.35;
+  font-size: 0.74rem;
+  line-height: 1.25;
 }
 
 .solver-panel {
   min-height: 100%;
 }
 
-.solver-position-list,
-.solver-config-list {
+.solver-position-list {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
 }
 
-.solver-position-list div,
-.solver-config-list div {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 12px;
+.solver-position-list div {
+  min-height: 38px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 7px 0;
   display: grid;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 2px;
+  align-content: center;
 }
 
-.solver-position-list strong,
-.solver-config-list strong {
-  font-size: 0.9rem;
+.solver-position-list div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.solver-position-list strong {
+  font-size: 0.86rem;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.solver-panel-divider {
+  height: 1px;
+  margin: 8px 0;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.solver-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+}
+
+.solver-config-grid div {
+  min-height: 36px;
+  display: grid;
+  gap: 2px;
+  align-content: center;
+}
+
+.solver-config-grid strong {
+  font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
 
 .solver-input-wrap {
-  margin-top: 10px;
+  margin-top: 7px;
 }
 
 .solver-input-wrap .dashboard-action-input-row {
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 
 .solver-input-wrap .dashboard-action-input {
-  min-height: 44px;
-  border-radius: 10px;
-  padding: 0 12px;
-  font-size: 1rem;
+  min-height: 34px;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 0.88rem;
   min-width: 0;
 }
 
 .solver-input-wrap .dashboard-action-inline {
-  min-height: 34px;
-  min-width: 56px;
+  min-height: 28px;
+  min-width: 52px;
   flex: 0 0 auto;
 }
 
 .solver-wide-button {
   width: 100%;
-  margin-top: 10px;
+  min-height: 34px;
+  margin-top: 7px;
 }
 
 .solver-action-split {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
+  gap: 7px;
+  margin-top: 7px;
 }
 
 .solver-order-input {
-  font-size: 0.92rem;
-  min-height: 42px;
+  font-size: 0.82rem;
+  min-height: 34px;
 }
 
 @media (max-width: 1180px) {
@@ -190,5 +226,18 @@
 
   .solver-hero-metrics {
     min-width: 0;
+  }
+
+  .solver-position-list,
+  .solver-config-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .solver-position-list div:nth-last-child(-n + 2) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .solver-position-list div:last-child {
+    border-bottom: 0;
   }
 }

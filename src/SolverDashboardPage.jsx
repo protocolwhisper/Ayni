@@ -242,7 +242,7 @@ function emptySolverState() {
   return {
     poolAddress: zeroAddress,
     assetAddress: zeroAddress,
-    poolName: 'Ayni Solver Pool',
+    poolName: 'Ayni Provider Pool',
     poolSymbol: 'asUSDC',
     assetSymbol: 'USDC',
     assetDecimals: 6,
@@ -587,7 +587,7 @@ export default function SolverDashboardPage() {
     }
 
     if (!solverState.ready) {
-      setSolverMessage({ tone: 'warning', text: 'Solver pool is not configured yet.' })
+      setSolverMessage({ tone: 'warning', text: 'Provider pool is not configured yet.' })
       return
     }
 
@@ -648,7 +648,7 @@ export default function SolverDashboardPage() {
     }
 
     if (!solverState.ready || solverState.walletShares <= 0n) {
-      setSolverMessage({ tone: 'warning', text: 'No solver shares are available for cooldown.' })
+      setSolverMessage({ tone: 'warning', text: 'No provider shares are available for cooldown.' })
       return
     }
 
@@ -680,7 +680,7 @@ export default function SolverDashboardPage() {
     }
 
     if (!solverState.ready) {
-      setSolverMessage({ tone: 'warning', text: 'Solver pool is not configured yet.' })
+      setSolverMessage({ tone: 'warning', text: 'Provider pool is not configured yet.' })
       return
     }
 
@@ -753,7 +753,7 @@ export default function SolverDashboardPage() {
         }),
       })
       setOrderId('')
-      setSolverMessage({ tone: 'success', text: 'Order filled from solver pool.' })
+      setSolverMessage({ tone: 'success', text: 'Order filled from provider pool.' })
     } catch (error) {
       setSolverMessage({
         tone: 'warning',
@@ -802,7 +802,7 @@ export default function SolverDashboardPage() {
         ) : null}
         {!canResolvePool ? (
           <p className="dashboard-status dashboard-status-warning">
-            Add a solver pool address, or set protocol plus collateral and USDC addresses.
+            Add a provider pool address, or set protocol plus collateral and USDC addresses.
           </p>
         ) : null}
         {walletAddress && !connectedToTargetChain ? (
@@ -810,8 +810,8 @@ export default function SolverDashboardPage() {
         ) : null}
 
         <section className="solver-hero lending-card">
-          <div>
-            <p className="dashboard-mini-modal-kicker">Solver liquidity</p>
+          <div className="solver-hero-copy">
+            <p className="dashboard-mini-modal-kicker">Provider liquidity</p>
             <h1>{solverState.poolName}</h1>
             <p>Deposit {solverState.assetSymbol}, monitor utilization, and fill open borrower orders.</p>
           </div>
@@ -845,9 +845,9 @@ export default function SolverDashboardPage() {
         </section>
 
         <section className="solver-grid solver-grid-wide">
-          <article className="lending-card solver-panel">
+          <article className="lending-card solver-panel solver-position-panel">
             <header className="lending-card-head">
-              <h2>Your solver position</h2>
+              <h2>LP position</h2>
             </header>
             <div className="solver-position-list">
               <div>
@@ -866,6 +866,15 @@ export default function SolverDashboardPage() {
                 <span>Cooldown</span>
                 <strong>{cooldownStatus}</strong>
               </div>
+            </div>
+            <div className="solver-panel-divider" />
+            <div className="solver-config-grid">
+              {solverRows.map(([label, value]) => (
+                <div key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
             </div>
           </article>
 
@@ -918,15 +927,9 @@ export default function SolverDashboardPage() {
             <button type="button" className="dashboard-button dashboard-button-primary solver-wide-button" onClick={handleRedeem} disabled={pendingAction === 'redeem'}>
               {pendingAction === 'redeem' ? 'Redeeming...' : 'Redeem'}
             </button>
-          </article>
-        </section>
 
-        <section className="solver-grid solver-grid-wide">
-          <article className="lending-card solver-panel">
-            <header className="lending-card-head">
-              <h2>Fill borrower order</h2>
-            </header>
-            <p className="solver-panel-copy">Use an open ERC-7683 order id. The protocol routes the fill through the configured solver pool.</p>
+            <div className="solver-panel-divider" />
+            <p className="solver-panel-copy">Fill an open ERC-7683 borrower order with pool liquidity.</p>
             <label className="dashboard-action-input-wrap solver-input-wrap">
               <span>Order id</span>
               <div className="dashboard-action-input-row">
@@ -942,20 +945,6 @@ export default function SolverDashboardPage() {
             <button type="button" className="dashboard-button dashboard-button-primary solver-wide-button" onClick={handleFillOrder} disabled={pendingAction === 'fill'}>
               {pendingAction === 'fill' ? 'Filling...' : 'Fill with pool'}
             </button>
-          </article>
-
-          <article className="lending-card solver-panel">
-            <header className="lending-card-head">
-              <h2>Pool config</h2>
-            </header>
-            <div className="solver-config-list">
-              {solverRows.map(([label, value]) => (
-                <div key={label}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
-            </div>
             <p className="solver-panel-copy">
               Withdrawals require a 7 day cooldown and stay redeemable for 2 days.
             </p>

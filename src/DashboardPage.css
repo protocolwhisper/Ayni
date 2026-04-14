@@ -450,6 +450,20 @@
   font-size: 0.8rem;
 }
 
+.pending-borrow-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(116, 207, 198, 0.28);
+  background: rgba(28, 108, 102, 0.18);
+  color: #9cd9d4;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .position-meta-pairs {
   display: grid;
   grid-template-columns: max-content max-content;

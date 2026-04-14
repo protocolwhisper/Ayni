@@ -35,6 +35,9 @@ const WALLET_DISCONNECTED_KEY = 'ayni_wallet_disconnected'
 const DEFAULT_PUBLIC_RPC_URL = 'https://liteforge.rpc.caldera.xyz/http'
 const DEFAULT_PUBLIC_CHAIN_ID = 4441
 const DEFAULT_WZKLTC_CONTRACT_ADDRESS = '0xdB7a824F2662585dd452021801cdEBF0A4b8586e'
+const ZERO_ORDER_ID = `0x${'0'.repeat(64)}`
+const CLAIM_STATUS_OPEN = 1
+const CLAIM_STATUS_FILLED = 2
 
 const PUBLIC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL || import.meta.env.VITE_WZKLTC_RPC_URL || DEFAULT_PUBLIC_RPC_URL
 const PUBLIC_CHAIN_ID =
@@ -182,7 +185,7 @@ const AYNI_PROTOCOL_ABI = [
       { internalType: 'uint256', name: 'amount', type: 'uint256' },
     ],
     name: 'borrow',
-    outputs: [],
+    outputs: [{ internalType: 'bytes32', name: 'order_id', type: 'bytes32' }],
     stateMutability: 'nonpayable',
     type: 'function',
   },
@@ -195,6 +198,25 @@ const AYNI_PROTOCOL_ABI = [
     name: 'repay',
     outputs: [],
     stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'bytes32', name: 'order_id', type: 'bytes32' }],
+    name: 'get_debt_position',
+    outputs: [
+      { internalType: 'address', name: 'vault', type: 'address' },
+      { internalType: 'address', name: 'borrower', type: 'address' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
+      { internalType: 'address', name: 'collateral_token', type: 'address' },
+      { internalType: 'address', name: 'debt_asset', type: 'address' },
+      { internalType: 'uint256', name: 'principal', type: 'uint256' },
+      { internalType: 'uint256', name: 'protocol_fee_bps', type: 'uint256' },
+      { internalType: 'uint256', name: 'fill_deadline', type: 'uint256' },
+      { internalType: 'uint256', name: 'filled_at', type: 'uint256' },
+      { internalType: 'bytes32', name: 'expected_fill_hash', type: 'bytes32' },
+      { internalType: 'uint8', name: 'status', type: 'uint8' },
+    ],
+    stateMutability: 'view',
     type: 'function',
   },
 ]
@@ -225,6 +247,13 @@ const AYNI_VAULT_ABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [{ internalType: 'address', name: 'user', type: 'address' }],
+    name: 'active_solver_order',
+    outputs: [{ internalType: 'bytes32', name: '', type: 'bytes32' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ]
 
 
@@ -245,6 +274,11 @@ function createEmptyDashboardState() {
     availableLiquidity: 0n,
     annualInterestBps: 0n,
     marketPaused: false,
+    activeOrderId: ZERO_ORDER_ID,
+    activeOrderPrincipal: 0n,
+    activeOrderFillDeadline: 0n,
+    activeOrderFilledAt: 0n,
+    activeOrderStatus: 0,
     loading: true,
     ready: false,
   }
@@ -407,6 +441,7 @@ export default function DashboardPage() {
           collateralUsd,
           healthFactor,
           maxBorrow,
+          activeOrderId,
         ] = await Promise.all([
           publicClient.readContract({
             address: AYNI_PROTOCOL_ADDRESS,
@@ -472,7 +507,25 @@ export default function DashboardPage() {
                 args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS, walletAddress],
               })
             : Promise.resolve(0n),
+          walletAddress
+            ? publicClient.readContract({
+                address: marketAddress,
+                abi: AYNI_VAULT_ABI,
+                functionName: 'active_solver_order',
+                args: [walletAddress],
+              })
+            : Promise.resolve(ZERO_ORDER_ID),
         ])
+
+        const activeOrderPosition =
+          walletAddress && activeOrderId !== ZERO_ORDER_ID
+            ? await publicClient.readContract({
+                address: AYNI_PROTOCOL_ADDRESS,
+                abi: AYNI_PROTOCOL_ABI,
+                functionName: 'get_debt_position',
+                args: [activeOrderId],
+              })
+            : null
 
         if (cancelled) return
 
@@ -492,6 +545,11 @@ export default function DashboardPage() {
           availableLiquidity,
           annualInterestBps,
           marketPaused,
+          activeOrderId,
+          activeOrderPrincipal: activeOrderPosition?.[5] ?? 0n,
+          activeOrderFillDeadline: activeOrderPosition?.[7] ?? 0n,
+          activeOrderFilledAt: activeOrderPosition?.[8] ?? 0n,
+          activeOrderStatus: activeOrderPosition?.[10] ?? 0,
           loading: false,
           ready: true,
         })
@@ -644,8 +702,18 @@ export default function DashboardPage() {
       return
     }
 
-    const borrowCapacity = minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
-    if (borrowCapacity <= 0n) {
+    if (dashboardState.activeOrderId !== ZERO_ORDER_ID) {
+      setDashboardMessage({
+        tone: 'warning',
+        text:
+          dashboardState.activeOrderStatus === CLAIM_STATUS_OPEN
+            ? 'Borrow request pending. Wait for solver fill before opening another borrow.'
+            : 'A borrow is already active. Repay it before opening another borrow.',
+      })
+      return
+    }
+
+    if (dashboardState.maxBorrow <= 0n) {
       setDashboardMessage({ tone: 'warning', text: 'No borrow capacity is available for this wallet yet.' })
       return
     }
@@ -810,9 +878,8 @@ export default function DashboardPage() {
       return
     }
 
-    const borrowCapacity = minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
-    if (isBorrow && amount > borrowCapacity) {
-      setActionModal((current) => ({ ...current, error: 'Borrow amount is above your available capacity.' }))
+    if (isBorrow && amount > dashboardState.maxBorrow) {
+      setActionModal((current) => ({ ...current, error: 'Borrow amount is above your collateral-backed limit.' }))
       return
     }
 
@@ -874,7 +941,28 @@ export default function DashboardPage() {
 
         setDashboardMessage({ tone: 'success', text: `Supplied ${trimmedValue} ${COLLATERAL_ASSET.symbol}.` })
       } else if (isBorrow) {
-        setDashboardMessage({ tone: '', text: `Borrowing ${DEBT_ASSET.symbol}...` })
+        const borrowWillBePending = amount > dashboardState.availableLiquidity
+        let predictedOrderId = ''
+
+        try {
+          const simulation = await publicClient.simulateContract({
+            account: walletAddress,
+            address: AYNI_PROTOCOL_ADDRESS,
+            abi: AYNI_PROTOCOL_ABI,
+            functionName: 'borrow',
+            args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS, amount],
+          })
+          predictedOrderId = simulation.result
+        } catch {
+          predictedOrderId = ''
+        }
+
+        setDashboardMessage({
+          tone: '',
+          text: borrowWillBePending
+            ? `Opening a borrow request for solver fill...`
+            : `Borrowing ${DEBT_ASSET.symbol}...`,
+        })
         await sendTransaction({
           to: AYNI_PROTOCOL_ADDRESS,
           data: encodeFunctionData({
@@ -884,7 +972,12 @@ export default function DashboardPage() {
           }),
         })
 
-        setDashboardMessage({ tone: 'success', text: `Borrowed ${trimmedValue} ${DEBT_ASSET.symbol}.` })
+        setDashboardMessage({
+          tone: 'success',
+          text: borrowWillBePending
+            ? `Borrow request pending. Waiting for solver fill${predictedOrderId ? ` (${shortAddress(predictedOrderId)})` : ''}.`
+            : `Borrowed ${trimmedValue} ${DEBT_ASSET.symbol}. Debt is active.`,
+        })
       } else if (isWithdraw) {
         setDashboardMessage({ tone: '', text: `Withdrawing ${COLLATERAL_ASSET.symbol}...` })
         await sendTransaction({
@@ -959,9 +1052,14 @@ export default function DashboardPage() {
   const healthFactorLabel = dashboardState.userDebt > 0n ? formatHealthFactorLabel(dashboardState.healthFactor) : '--'
   const healthFactorValue =
     dashboardState.userDebt > 0n ? Number(formatUnits(dashboardState.healthFactor, 18)) : 0
+  const hasActiveOrder = dashboardState.activeOrderId !== ZERO_ORDER_ID
+  const borrowPending = hasActiveOrder && dashboardState.activeOrderStatus === CLAIM_STATUS_OPEN
+  const borrowActive = hasActiveOrder && dashboardState.activeOrderStatus === CLAIM_STATUS_FILLED
   const healthFactorStatus = !walletAddress
     ? 'Connect wallet to view live position data.'
-    : dashboardState.userDebt === 0n
+    : borrowPending
+      ? 'Borrow request pending'
+      : dashboardState.userDebt === 0n
       ? 'No borrow yet'
       : healthFactorValue < 1
         ? 'At liquidation risk'
@@ -972,6 +1070,7 @@ export default function DashboardPage() {
   const borrowAvailable = walletAddress
     ? minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
     : dashboardState.availableLiquidity
+  const borrowRequestLimit = walletAddress ? dashboardState.maxBorrow : dashboardState.availableLiquidity
   const repayAvailable = walletAddress ? minBigInt(dashboardState.userDebt, dashboardState.debtWalletBalance) : 0n
   const withdrawAvailable = walletAddress
     ? calculateMaxWithdrawableCollateral({
@@ -985,15 +1084,23 @@ export default function DashboardPage() {
     ? 'Connect wallet to check how much USDC you can borrow.'
     : dashboardState.userCollateral === 0n
       ? 'To borrow you need to supply WzkLTC as collateral.'
+      : borrowPending
+        ? 'Borrow request pending. Your WzkLTC is locked while waiting for solver fill.'
+        : borrowActive
+          ? 'Debt is active. Repay through the normal market flow.'
       : dashboardState.marketPaused
         ? 'Borrowing is currently paused for this market.'
-        : 'Borrow against your supplied WzkLTC.'
+        : borrowAvailable > 0n
+          ? 'Borrow is instant while pool liquidity is available.'
+          : borrowRequestLimit > 0n
+            ? 'Pool liquidity is low. A new borrow will open as a pending solver request.'
+            : 'Borrow against your supplied WzkLTC.'
   const supplyRows =
     showZeroBalances || dashboardState.walletBalance > 0n || dashboardState.userCollateral > 0n
       ? [COLLATERAL_ASSET]
       : []
   const borrowRows =
-    showZeroBalances || borrowAvailable > 0n || dashboardState.userDebt > 0n ? [DEBT_ASSET] : []
+    showZeroBalances || borrowRequestLimit > 0n || dashboardState.userDebt > 0n || borrowPending ? [DEBT_ASSET] : []
   const actionModalOpen =
     actionModal.type === 'supply' ||
     actionModal.type === 'borrow' ||
@@ -1020,7 +1127,7 @@ export default function DashboardPage() {
   const actionModalBalanceLabel = actionModalIsSupply
     ? 'Wallet balance'
     : actionModalIsBorrow
-      ? 'Available now'
+      ? 'Instant now'
       : actionModalIsRepay
         ? 'Repayable now'
         : 'Withdrawable now'
@@ -1033,6 +1140,10 @@ export default function DashboardPage() {
         : `${formatTokenAmount(withdrawAvailable, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
   const actionModalHint = actionModalIsRepay
     ? `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+    : actionModalIsBorrow
+      ? borrowAvailable >= borrowRequestLimit
+        ? `Borrow is instant while the pool has liquidity.`
+        : `Up to ${formatTokenAmount(borrowRequestLimit, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} can open as a pending solver request if the pool is illiquid.`
     : ''
   const actionModalAllowanceHint = actionModalIsRepay
     ? dashboardState.debtAllowance > 0n
@@ -1069,8 +1180,24 @@ export default function DashboardPage() {
       value: `${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`,
     },
     {
-      label: 'Available now',
+      label: 'Instant now',
       value: `${formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`,
+    },
+    {
+      label: 'Request up to',
+      value: `${formatTokenAmount(borrowRequestLimit, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`,
+    },
+    {
+      label: 'State',
+      value: borrowPending
+        ? 'Waiting for solver fill'
+        : borrowActive
+          ? 'Debt active'
+          : 'No debt',
+    },
+    {
+      label: 'Repay flow',
+      value: 'Normal market repay',
     },
     {
       label: 'Variable APR',
@@ -1087,7 +1214,7 @@ export default function DashboardPage() {
           </a>
           <div className="dashboard-actions">
             <a className="dashboard-button dashboard-button-ghost" href="/solver/">
-              Solver dashboard
+              Provider dashboard
             </a>
             <button type="button" className="dashboard-button dashboard-button-primary" onClick={handleOpenBridge}>
               Get WzkLTC
@@ -1186,7 +1313,27 @@ export default function DashboardPage() {
             <header className="lending-card-head">
               <h2>Your borrows</h2>
             </header>
-            {dashboardState.userDebt > 0n ? (
+            {borrowPending ? (
+              <div className="position-stack">
+                <div className="position-value-row">
+                  <div className="position-value-with-meta">
+                    <strong className="position-value">Borrow request pending</strong>
+                    <span className="pending-borrow-pill">Waiting for solver fill</span>
+                  </div>
+                </div>
+                <span className="position-meta">
+                  Your WzkLTC collateral is locked, but USDC has not arrived yet.
+                </span>
+                <div className="position-meta-pairs">
+                  <span className="position-meta-subtle position-meta-label">Requested:</span>
+                  <span className="position-meta-subtle position-meta-value">
+                    {formatTokenAmount(dashboardState.activeOrderPrincipal, dashboardState.debtDecimals, 6)} {DEBT_ASSET.symbol}
+                  </span>
+                  <span className="position-meta-subtle position-meta-label">Order:</span>
+                  <span className="position-meta-subtle position-meta-value">{shortAddress(dashboardState.activeOrderId)}</span>
+                </div>
+              </div>
+            ) : dashboardState.userDebt > 0n ? (
               <div className="position-stack">
                 <div className="position-value-row">
                   <strong className="position-value">
@@ -1202,7 +1349,7 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 <span className="position-meta">
-                  Variable APR {formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}%
+                  Variable APR {formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}% • Repay stays in the normal market flow.
                 </span>
               </div>
             ) : (
@@ -1293,7 +1440,10 @@ export default function DashboardPage() {
                 <div key={asset.symbol} className="asset-row">
                   <div className="asset-cell-main">
                     <span className="asset-orb">{asset.symbol.slice(0, 1)}</span>
-                    <strong>{asset.symbol}</strong>
+                    <span className="asset-copy">
+                      <strong>{asset.symbol}</strong>
+                      <small>{borrowPending ? 'Borrow request pending' : 'Instant if liquidity is available'}</small>
+                    </span>
                   </div>
                   <span>{formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)}</span>
                   <span>{formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}%</span>
@@ -1301,7 +1451,7 @@ export default function DashboardPage() {
                     type="button"
                     className="asset-action asset-action-muted"
                     onClick={handleBorrow}
-                    disabled={!protocolConfigured || pendingAction === 'borrow'}
+                    disabled={!protocolConfigured || pendingAction === 'borrow' || borrowPending || borrowActive}
                   >
                     {pendingAction === 'borrow' ? 'Borrowing...' : 'Borrow'}
                   </button>

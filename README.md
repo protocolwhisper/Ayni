@@ -11,7 +11,7 @@ bun run dev
 
 ## Dashboard gate
 
-Landing CTAs route to `/dashboard/`, and solver liquidity lives at `/solver/`. The password gate protects both pages whenever `DASHBOARD_PASSWORD` is set, unless you explicitly disable it:
+Landing CTAs route to `/dashboard/`, and provider liquidity lives at `/solver/`. The password gate protects both pages whenever `DASHBOARD_PASSWORD` is set, unless you explicitly disable it:
 
 ```bash
 DASHBOARD_PASSWORD=your-password
@@ -36,7 +36,7 @@ VITE_PUBLIC_CHAIN_ID=
 
 The dashboard reads one collateral market from `AyniProtocol`: supplied asset `WZKLTC`, borrowed asset `USDC`. It uses `VITE_WZKLTC_CONTRACT_ADDRESS` as the WZKLTC balance/collateral token unless you explicitly set a different `VITE_AYNI_COLLATERAL_TOKEN_ADDRESS`, loads the market address through `get_market(collateral, debt)`, reads position data from that vault, approves the vault for supply, and sends `deposit` / `borrow` through the protocol router.
 
-The solver dashboard reads `AyniSolverPool`: total assets, utilization, borrow rate, reserves, wallet shares, cooldown state, deposit/redeem limits, and `fill_with_pool(orderId)`. It uses `VITE_SOLVER_POOL_ADDRESS` when present; otherwise it resolves the pool through `AyniProtocol.get_solver_pool(WZKLTC, USDC)`.
+The provider dashboard reads `AyniSolverPool`: total assets, utilization, borrow rate, reserves, wallet shares, cooldown state, deposit/redeem limits, and `fill_with_pool(orderId)`. It uses `VITE_SOLVER_POOL_ADDRESS` when present; otherwise it resolves the pool through `AyniProtocol.get_solver_pool(WZKLTC, USDC)`.
 
 ## Wrapper contract config
 
