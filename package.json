@@ -13,8 +13,7 @@
     "test:unit": "vitest run tests/unit",
     "test:contract": "vitest run tests/contract",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "seed-vault": "node scripts/seed-vault.js"
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@metalayer/sdk": "^1.0.7",
