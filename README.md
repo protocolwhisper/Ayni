@@ -1,6 +1,6 @@
 # Ayni Frontend
 
-Dashboard and contract-first WZKLTC mint flow for the Ayni prototype.
+Dashboard and contract-first WZKLTC deposit flow for the Ayni prototype.
 
 ## Local setup
 
@@ -37,14 +37,25 @@ The dashboard reads one collateral market from `AyniProtocol`: supplied asset `W
 
 ## Wrapper contract config
 
-Copy `.env.example` to `.env` and set the wrapper deployment address before using the mint modal:
+Copy `.env.example` to `.env` and set the wrapper deployment address before using the deposit modal:
 
 ```bash
-VITE_WZKLTC_CONTRACT_ADDRESS=0x...
-VITE_ZKLTC_TOKEN_ADDRESS=
+VITE_WZKLTC_CONTRACT_ADDRESS=0x60A84eBC3483fEFB251B76Aea5B8458026Ef4bea
+VITE_PUBLIC_RPC_URL=https://liteforge.rpc.caldera.xyz/http
+VITE_PUBLIC_CHAIN_ID=4441
 VITE_WZKLTC_SOURCE_CHAIN_NAME=Liteforge
 VITE_WZKLTC_DEST_CHAIN_NAME=Wrapped zkLTC
 VITE_WZKLTC_CONTRACT_LABEL=Wrapped zkLTC
 ```
 
-The modal reads the source-side balance through `VITE_PUBLIC_RPC_URL`. If `VITE_ZKLTC_TOKEN_ADDRESS` is set, it reads `balanceOf` from that token; otherwise it reads the native balance on that chain. Minted `WZKLTC` returns to the connected wallet.
+The modal reads the native zkLTC balance through `VITE_PUBLIC_RPC_URL` and sends a payable `deposit()` transaction to `VITE_WZKLTC_CONTRACT_ADDRESS`, equivalent to:
+
+```bash
+cast send 0x60A84eBC3483fEFB251B76Aea5B8458026Ef4bea \
+  "deposit()" \
+  --value 0.01ether \
+  --rpc-url https://liteforge.rpc.caldera.xyz/http \
+  --account ayni
+```
+
+Wrapped `WZKLTC` returns to the connected wallet.

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { createPublicClient, encodeFunctionData, formatEther, formatUnits, http, isAddress, parseEther } from 'viem'
+import { createPublicClient, encodeFunctionData, formatEther, http, isAddress, parseEther } from 'viem'
 import './WrappedBridgeModal.css'
 import { hexValue, shortAddress } from './utils.js'
 
@@ -13,28 +13,12 @@ const WRAPPED_ZKLTC_ABI = [
   },
 ]
 
-const ERC20_BALANCE_ABI = [
-  {
-    inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
-    name: 'balanceOf',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'decimals',
-    outputs: [{ internalType: 'uint8', name: '', type: 'uint8' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-]
-
-const WZKLTC_CONTRACT_ADDRESS = import.meta.env.VITE_WZKLTC_CONTRACT_ADDRESS ?? ''
+const DEFAULT_WZKLTC_CONTRACT_ADDRESS = '0x60A84eBC3483fEFB251B76Aea5B8458026Ef4bea'
+const DEFAULT_WZKLTC_RPC_URL = 'https://liteforge.rpc.caldera.xyz/http'
+const WZKLTC_CONTRACT_ADDRESS = import.meta.env.VITE_WZKLTC_CONTRACT_ADDRESS || DEFAULT_WZKLTC_CONTRACT_ADDRESS
 const WZKLTC_CHAIN_ID =
-  Number.parseInt(import.meta.env.VITE_PUBLIC_CHAIN_ID ?? import.meta.env.VITE_WZKLTC_CHAIN_ID ?? '', 10) || null
-const WZKLTC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL ?? import.meta.env.VITE_WZKLTC_RPC_URL ?? ''
-const ZKLTC_TOKEN_ADDRESS = import.meta.env.VITE_ZKLTC_TOKEN_ADDRESS ?? ''
+  Number.parseInt(import.meta.env.VITE_PUBLIC_CHAIN_ID || import.meta.env.VITE_WZKLTC_CHAIN_ID || '4441', 10) || null
+const WZKLTC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL || import.meta.env.VITE_WZKLTC_RPC_URL || DEFAULT_WZKLTC_RPC_URL
 const SOURCE_CHAIN_NAME = import.meta.env.VITE_WZKLTC_SOURCE_CHAIN_NAME ?? 'Liteforge'
 const DESTINATION_CHAIN_NAME = import.meta.env.VITE_WZKLTC_DEST_CHAIN_NAME ?? 'Wrapped zkLTC'
 const CONTRACT_LABEL = import.meta.env.VITE_WZKLTC_CONTRACT_LABEL ?? 'Wrapped zkLTC'
@@ -111,10 +95,9 @@ export default function WrappedBridgeModal({
 
   const walletConnected = Boolean(walletAddress)
   const contractConfigured = isAddress(WZKLTC_CONTRACT_ADDRESS)
-  const sourceTokenConfigured = isAddress(ZKLTC_TOKEN_ADDRESS)
   const parsedAmount = Number.parseFloat(sendAmount)
   const normalizedAmount = Number.isFinite(parsedAmount) ? parsedAmount : 0
-  const suggestedMax = sourceTokenConfigured ? walletBalance : Math.max(walletBalance - gasReserve, 0)
+  const suggestedMax = Math.max(walletBalance - gasReserve, 0)
   const sourceClient = useMemo(() => {
     if (!WZKLTC_RPC_URL) return null
 
@@ -126,7 +109,7 @@ export default function WrappedBridgeModal({
   const actionLabel = useMemo(() => {
     if (!contractConfigured) return 'Coming Soon'
     if (isSubmitting) return 'Sending...'
-    return 'Wrap zkLTC'
+    return 'Deposit zkLTC'
   }, [contractConfigured, isSubmitting])
 
   const connectLabel = isConnecting ? 'Connecting...' : 'Connect Wallet'
@@ -144,31 +127,12 @@ export default function WrappedBridgeModal({
         if (sourceClient) {
           const [chainId, balance] = await Promise.all([
             sourceClient.getChainId(),
-            sourceTokenConfigured
-              ? sourceClient.readContract({
-                  address: ZKLTC_TOKEN_ADDRESS,
-                  abi: ERC20_BALANCE_ABI,
-                  functionName: 'balanceOf',
-                  args: [walletAddress],
-                })
-              : sourceClient.getBalance({ address: walletAddress }),
+            sourceClient.getBalance({ address: walletAddress }),
           ])
 
           if (cancelled) return
 
-          if (sourceTokenConfigured) {
-            const decimals = await sourceClient.readContract({
-              address: ZKLTC_TOKEN_ADDRESS,
-              abi: ERC20_BALANCE_ABI,
-              functionName: 'decimals',
-            })
-
-            if (cancelled) return
-
-            setWalletBalance(Number.parseFloat(formatUnits(balance, decimals)))
-          } else {
-            setWalletBalance(Number.parseFloat(formatEther(balance)))
-          }
+          setWalletBalance(Number.parseFloat(formatEther(balance)))
 
           setActiveChainId(chainId)
           return
@@ -200,10 +164,10 @@ export default function WrappedBridgeModal({
     return () => {
       cancelled = true
     }
-  }, [sourceClient, sourceTokenConfigured, walletAddress, walletConnected])
+  }, [sourceClient, walletAddress, walletConnected])
 
   useEffect(() => {
-    if (!walletConnected || sourceTokenConfigured || !sourceClient || !contractConfigured) {
+    if (!walletConnected || !sourceClient || !contractConfigured) {
       setGasReserve(0)
       return undefined
     }
@@ -222,7 +186,7 @@ export default function WrappedBridgeModal({
             account: walletAddress,
             to: WZKLTC_CONTRACT_ADDRESS,
             data,
-            value: 0n,
+            value: 1n,
           }),
           sourceClient
             .estimateFeesPerGas()
@@ -246,7 +210,7 @@ export default function WrappedBridgeModal({
     return () => {
       cancelled = true
     }
-  }, [contractConfigured, sourceClient, sourceTokenConfigured, walletAddress, walletConnected])
+  }, [contractConfigured, sourceClient, walletAddress, walletConnected])
 
   if (!isOpen) return null
 
@@ -278,13 +242,13 @@ export default function WrappedBridgeModal({
       setPanelMessage(
         userRejected
           ? 'Chain switch was cancelled.'
-          : `Switch your wallet to chain ${WZKLTC_CHAIN_ID} before minting.`,
+          : `Switch your wallet to chain ${WZKLTC_CHAIN_ID} before depositing.`,
       )
       return false
     }
   }
 
-  async function handleMint() {
+  async function handleDeposit() {
     if (!walletAddress) {
       await onConnectWallet?.()
       return
@@ -334,7 +298,7 @@ export default function WrappedBridgeModal({
       setSendAmount('')
     } catch (error) {
       const userRejected = error?.code === 4001
-      setPanelMessage(userRejected ? 'Transaction signature was cancelled.' : 'Minting failed. Please try again.')
+      setPanelMessage(userRejected ? 'Transaction signature was cancelled.' : 'Deposit failed. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -429,7 +393,7 @@ export default function WrappedBridgeModal({
                     75%
                   </button>
                   <button type="button" onClick={() => handlePresetFill(1)}>
-                    {sourceTokenConfigured ? 'Max' : 'Max - Gas'}
+                    Max - Gas
                   </button>
                 </div>
                 <button type="button" className="wzkltc-balance-pill" onClick={() => handlePresetFill(1)}>
@@ -449,18 +413,16 @@ export default function WrappedBridgeModal({
             <div className="wzkltc-flow-card">
               <div className="wzkltc-section-head">
                 <span>Receive</span>
-                <small>1:1 mint</small>
+                <small>1:1 wrap</small>
               </div>
               <div className="wzkltc-receive-row">
               <div className="wzkltc-receive-copy">
                 <strong>{formatTokenAmount(normalizedAmount || 0, 6)}</strong>
                 <span>WZKLTC</span>
                 <small>
-                  {sourceTokenConfigured
-                    ? 'Minted to your connected wallet.'
-                    : gasReserve > 0
-                      ? `Minted to your connected wallet. Max leaves about ${formatTokenAmount(gasReserve, 6)} zkLTC for gas.`
-                      : 'Minted to your connected wallet.'}
+                  {gasReserve > 0
+                    ? `Wrapped to your connected wallet. Max leaves about ${formatTokenAmount(gasReserve, 6)} zkLTC for gas.`
+                    : 'Wrapped to your connected wallet.'}
                 </small>
               </div>
               <NetworkBadge tone="destination" symbol="WZ" label="WZKLTC" sublabel={DESTINATION_CHAIN_NAME} />
@@ -483,7 +445,7 @@ export default function WrappedBridgeModal({
           <button
             type="button"
             className="wzkltc-submit"
-            onClick={handleMint}
+            onClick={handleDeposit}
             disabled={isConnecting || isSubmitting}
           >
             {actionLabel}
