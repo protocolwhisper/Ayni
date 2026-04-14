@@ -972,8 +972,6 @@ export default function DashboardPage() {
         : `${formatTokenAmount(withdrawAvailable, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
   const actionModalHint = actionModalIsRepay
     ? `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
-    : actionModalIsWithdraw
-      ? `Current health factor ${healthFactorLabel} • Maintains minimum ${formatHealthFactorLabel(WITHDRAW_HEALTH_FACTOR_MIN)} after withdraw.`
     : ''
   const actionModalAllowanceHint = actionModalIsRepay
     ? dashboardState.debtAllowance > 0n
