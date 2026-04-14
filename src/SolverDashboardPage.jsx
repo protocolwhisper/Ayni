@@ -12,8 +12,12 @@ import {
 import './DashboardPage.css'
 import './SolverDashboardPage.css'
 import { formatTokenAmount, hexValue, shortAddress } from './utils.js'
+import {
+  clearWalletDisconnected,
+  markWalletDisconnected,
+  readWalletSessionSync,
+} from './walletSession.js'
 
-const WALLET_DISCONNECTED_KEY = 'ayni_solver_wallet_disconnected'
 const DEFAULT_PUBLIC_RPC_URL = 'https://liteforge.rpc.caldera.xyz/http'
 const DEFAULT_PUBLIC_CHAIN_ID = 4441
 const DEFAULT_WZKLTC_CONTRACT_ADDRESS = '0xdB7a824F2662585dd452021801cdEBF0A4b8586e'
@@ -330,17 +334,13 @@ export default function SolverDashboardPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return undefined
 
-    const manuallyDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
-    const initialWallet = manuallyDisconnected ? '' : (window.ethereum.selectedAddress ?? '')
-    const initialChain = window.ethereum.chainId ? Number.parseInt(window.ethereum.chainId, 16) : null
-
-    setWalletAddress(initialWallet)
-    setWalletChainId(initialChain)
-    setWalletStatus(initialWallet ? `Connected ${shortAddress(initialWallet)}` : '')
+    const initialSession = readWalletSessionSync()
+    setWalletAddress(initialSession.walletAddress)
+    setWalletChainId(initialSession.walletChainId)
+    setWalletStatus(initialSession.walletAddress ? `Connected ${shortAddress(initialSession.walletAddress)}` : '')
 
     function handleAccountsChanged(accounts) {
-      const isDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
-      const nextWallet = isDisconnected ? '' : (accounts?.[0] ?? '')
+      const nextWallet = readWalletSessionSync().walletAddress || (accounts?.[0] ?? '')
       setWalletAddress(nextWallet)
       setWalletStatus(nextWallet ? `Connected ${shortAddress(nextWallet)}` : 'Wallet disconnected.')
     }
@@ -520,7 +520,7 @@ export default function SolverDashboardPage() {
 
     setIsConnecting(true)
     try {
-      window.sessionStorage.removeItem(WALLET_DISCONNECTED_KEY)
+      clearWalletDisconnected()
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
       const nextWallet = accounts?.[0] ?? ''
       const nextChain = window.ethereum.chainId ? Number.parseInt(window.ethereum.chainId, 16) : null
@@ -540,9 +540,7 @@ export default function SolverDashboardPage() {
       return
     }
 
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem(WALLET_DISCONNECTED_KEY, '1')
-    }
+    markWalletDisconnected()
 
     setWalletAddress('')
     setWalletChainId(null)

@@ -29,9 +29,13 @@ import {
   minBigInt,
   shortAddress,
 } from './utils.js'
+import {
+  clearWalletDisconnected,
+  markWalletDisconnected,
+  readWalletSessionSync,
+} from './walletSession.js'
 
 const DOCS_URL = 'https://liteforge.hub.caldera.xyz/'
-const WALLET_DISCONNECTED_KEY = 'ayni_wallet_disconnected'
 const DEFAULT_PUBLIC_RPC_URL = 'https://liteforge.rpc.caldera.xyz/http'
 const DEFAULT_PUBLIC_CHAIN_ID = 4441
 const DEFAULT_WZKLTC_CONTRACT_ADDRESS = '0xdB7a824F2662585dd452021801cdEBF0A4b8586e'
@@ -313,17 +317,13 @@ export default function DashboardPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return undefined
 
-    const manuallyDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
-    const initialWallet = manuallyDisconnected ? '' : (window.ethereum.selectedAddress ?? '')
-    const initialChain = window.ethereum.chainId ? Number.parseInt(window.ethereum.chainId, 16) : null
-
-    setWalletAddress(initialWallet)
-    setWalletChainId(initialChain)
-    setWalletStatus(initialWallet ? `Connected ${shortAddress(initialWallet)}` : '')
+    const initialSession = readWalletSessionSync()
+    setWalletAddress(initialSession.walletAddress)
+    setWalletChainId(initialSession.walletChainId)
+    setWalletStatus(initialSession.walletAddress ? `Connected ${shortAddress(initialSession.walletAddress)}` : '')
 
     function handleAccountsChanged(accounts) {
-      const isDisconnected = window.sessionStorage.getItem(WALLET_DISCONNECTED_KEY) === '1'
-      const nextWallet = isDisconnected ? '' : (accounts?.[0] ?? '')
+      const nextWallet = readWalletSessionSync().walletAddress || (accounts?.[0] ?? '')
       setWalletAddress(nextWallet)
       setWalletStatus(nextWallet ? `Connected ${shortAddress(nextWallet)}` : 'Wallet disconnected.')
     }
@@ -579,7 +579,7 @@ export default function DashboardPage() {
 
     setIsConnecting(true)
     try {
-      window.sessionStorage.removeItem(WALLET_DISCONNECTED_KEY)
+      clearWalletDisconnected()
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
       const nextWallet = accounts?.[0] ?? ''
       const nextChain = window.ethereum.chainId ? Number.parseInt(window.ethereum.chainId, 16) : null
@@ -595,9 +595,7 @@ export default function DashboardPage() {
   }
 
   async function handleDisconnectWallet() {
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem(WALLET_DISCONNECTED_KEY, '1')
-    }
+    markWalletDisconnected()
 
     try {
       await window.ethereum?.request?.({
@@ -1088,13 +1086,9 @@ export default function DashboardPage() {
         ? 'Borrow request pending. Your WzkLTC is locked while waiting for solver fill.'
         : borrowActive
           ? 'Debt is active. Repay through the normal market flow.'
-      : dashboardState.marketPaused
+          : dashboardState.marketPaused
         ? 'Borrowing is currently paused for this market.'
-        : borrowAvailable > 0n
-          ? 'Borrow is instant while pool liquidity is available.'
-          : borrowRequestLimit > 0n
-            ? 'Pool liquidity is low. A new borrow will open as a pending solver request.'
-            : 'Borrow against your supplied WzkLTC.'
+        : 'Borrow against your supplied WzkLTC.'
   const supplyRows =
     showZeroBalances || dashboardState.walletBalance > 0n || dashboardState.userCollateral > 0n
       ? [COLLATERAL_ASSET]
@@ -1140,10 +1134,6 @@ export default function DashboardPage() {
         : `${formatTokenAmount(withdrawAvailable, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
   const actionModalHint = actionModalIsRepay
     ? `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
-    : actionModalIsBorrow
-      ? borrowAvailable >= borrowRequestLimit
-        ? `Borrow is instant while the pool has liquidity.`
-        : `Up to ${formatTokenAmount(borrowRequestLimit, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} can open as a pending solver request if the pool is illiquid.`
     : ''
   const actionModalAllowanceHint = actionModalIsRepay
     ? dashboardState.debtAllowance > 0n
@@ -1442,7 +1432,7 @@ export default function DashboardPage() {
                     <span className="asset-orb">{asset.symbol.slice(0, 1)}</span>
                     <span className="asset-copy">
                       <strong>{asset.symbol}</strong>
-                      <small>{borrowPending ? 'Borrow request pending' : 'Instant if liquidity is available'}</small>
+                      <small>{borrowPending ? 'Borrow request pending' : 'Standard borrow flow'}</small>
                     </span>
                   </div>
                   <span>{formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)}</span>

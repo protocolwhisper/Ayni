@@ -14,6 +14,42 @@
   font-size: 0.88rem;
 }
 
+.solver-page .dashboard-button {
+  border-radius: 10px;
+  font-family: var(--sky-display);
+  font-weight: 600;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.solver-panel .dashboard-button-primary {
+  border: 1px solid rgba(166, 150, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(152, 136, 233, 0.18), rgba(123, 108, 203, 0.14)),
+    rgba(255, 255, 255, 0.04);
+  color: #eef2ff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.solver-panel .dashboard-button-primary:hover:not(:disabled) {
+  border-color: rgba(182, 167, 255, 0.34);
+  background:
+    linear-gradient(180deg, rgba(160, 145, 242, 0.24), rgba(130, 114, 212, 0.18)),
+    rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.solver-page .dashboard-button-ghost {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #dbe3f7;
+}
+
+.solver-page .dashboard-button-ghost:hover:not(:disabled) {
+  border-color: rgba(173, 185, 232, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
 .solver-page .lending-card {
   border-radius: 12px;
   padding: 11px 12px;
@@ -89,6 +125,7 @@
 
 .solver-grid-wide {
   grid-template-columns: minmax(320px, 0.9fr) minmax(440px, 1.1fr);
+  align-items: start;
 }
 
 .solver-metric-card {
@@ -112,7 +149,7 @@
 }
 
 .solver-panel {
-  min-height: 100%;
+  min-height: 0;
 }
 
 .solver-position-list {
@@ -171,6 +208,7 @@
 .solver-input-wrap .dashboard-action-input-row {
   gap: 7px;
   min-width: 0;
+  align-items: center;
 }
 
 .solver-input-wrap .dashboard-action-input {
@@ -185,12 +223,20 @@
   min-height: 28px;
   min-width: 52px;
   flex: 0 0 auto;
+  border-radius: 8px;
+  border: 1px solid rgba(158, 170, 217, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: #d8dff4;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .solver-wide-button {
   width: 100%;
-  min-height: 34px;
+  min-height: 36px;
   margin-top: 7px;
+  border-radius: 10px;
+  letter-spacing: 0;
 }
 
 .solver-action-split {
@@ -198,6 +244,19 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
   margin-top: 7px;
+}
+
+.solver-action-split .dashboard-button {
+  min-height: 36px;
+  padding: 0 14px;
+}
+
+.solver-panel .lending-card-head h2 {
+  margin-bottom: 2px;
+}
+
+.solver-panel .solver-panel-copy + .solver-input-wrap {
+  margin-top: 10px;
 }
 
 .solver-order-input {
