@@ -686,6 +686,17 @@
   gap: 8px;
 }
 
+.asset-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.asset-copy small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
 .asset-orb {
   width: 22px;
   height: 22px;

@@ -354,7 +354,7 @@ export default function DashboardPage() {
           return
         }
 
-        const [protocolChainId, collateralDecimals, debtDecimals, marketAddress] = await Promise.all([
+        const [protocolChainId, collateralDecimals, debtDecimals, marketAddress, walletBalance] = await Promise.all([
           publicClient.getChainId(),
           publicClient.readContract({
             address: COLLATERAL_TOKEN_ADDRESS,
@@ -372,6 +372,14 @@ export default function DashboardPage() {
             functionName: 'get_market',
             args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS],
           }),
+          walletAddress
+            ? publicClient.readContract({
+                address: COLLATERAL_TOKEN_ADDRESS,
+                abi: ERC20_ABI,
+                functionName: 'balanceOf',
+                args: [walletAddress],
+              })
+            : Promise.resolve(0n),
         ])
 
         if (cancelled) return
@@ -382,6 +390,7 @@ export default function DashboardPage() {
             protocolChainId,
             collateralDecimals,
             debtDecimals,
+            walletBalance,
             loading: false,
             ready: false,
           })
@@ -392,7 +401,6 @@ export default function DashboardPage() {
           availableLiquidity,
           annualInterestBps,
           marketPaused,
-          walletBalance,
           debtWalletBalance,
           debtAllowance,
           positions,
@@ -416,14 +424,6 @@ export default function DashboardPage() {
             abi: AYNI_VAULT_ABI,
             functionName: 'paused',
           }),
-          walletAddress
-            ? publicClient.readContract({
-                address: COLLATERAL_TOKEN_ADDRESS,
-                abi: ERC20_ABI,
-                functionName: 'balanceOf',
-                args: [walletAddress],
-              })
-            : Promise.resolve(0n),
           walletAddress
             ? publicClient.readContract({
                 address: DEBT_TOKEN_ADDRESS,
@@ -1244,7 +1244,10 @@ export default function DashboardPage() {
                 <div key={asset.symbol} className="asset-row">
                   <div className="asset-cell-main">
                     <span className="asset-orb">{asset.symbol.slice(0, 1)}</span>
-                    <strong>{asset.symbol}</strong>
+                    <span className="asset-copy">
+                      <strong>{asset.symbol}</strong>
+                      <small>{shortAddress(COLLATERAL_TOKEN_ADDRESS)}</small>
+                    </span>
                   </div>
                   <span>{formatTokenAmount(dashboardState.walletBalance, dashboardState.collateralDecimals, 6)}</span>
                   <span>{collateralApyLabel}</span>
