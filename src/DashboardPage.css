@@ -213,8 +213,15 @@
   font-size: 0.8rem;
 }
 
+.dashboard-action-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .dashboard-action-input {
   width: 100%;
+  flex: 1;
   min-height: 58px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
@@ -228,6 +235,26 @@
 
 .dashboard-action-input::placeholder {
   color: rgba(197, 203, 226, 0.34);
+}
+
+.dashboard-action-inline {
+  min-height: 40px;
+  min-width: 74px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #dde4f7;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dashboard-action-hint {
+  margin: -4px 0 0;
+  color: #c8d2ef;
+  font-size: 0.78rem;
 }
 
 .dashboard-action-modal-actions {
@@ -389,9 +416,55 @@
   font-weight: 600;
 }
 
+.position-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.position-value-with-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.position-action-button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
 .position-meta {
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.position-meta-inline {
+  white-space: nowrap;
+}
+
+.position-meta-subtle {
+  color: #b6c0df;
+  font-size: 0.8rem;
+}
+
+.position-meta-pairs {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  column-gap: 8px;
+  row-gap: 2px;
+  width: fit-content;
+}
+
+.position-meta-label {
+  min-width: 6.3rem;
+  font-weight: 600;
+}
+
+.position-meta-value {
+  font-variant-numeric: tabular-nums;
 }
 
 .litvm-network-card {

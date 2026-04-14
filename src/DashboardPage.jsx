@@ -12,6 +12,15 @@ import {
 import './DashboardPage.css'
 import WrappedBridgeModal from './WrappedBridgeModal.jsx'
 import {
+  calculateEncumberedCollateral,
+  calculateMaxWithdrawableCollateral,
+  calculateProjectedHealthFactorAfterWithdraw,
+  calculateRepayCap,
+  validateRepayAmount,
+  validateWithdrawAmount,
+  WITHDRAW_HEALTH_FACTOR_MIN,
+} from './lendingMath.js'
+import {
   MAX_HEALTH_FACTOR,
   formatHealthFactorLabel,
   formatTokenAmount,
@@ -155,7 +164,29 @@ const AYNI_PROTOCOL_ABI = [
       { internalType: 'address', name: 'debt_asset', type: 'address' },
       { internalType: 'uint256', name: 'amount', type: 'uint256' },
     ],
+    name: 'withdraw',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: 'collateral_token', type: 'address' },
+      { internalType: 'address', name: 'debt_asset', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
     name: 'borrow',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: 'collateral_token', type: 'address' },
+      { internalType: 'address', name: 'debt_asset', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'repay',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -198,6 +229,8 @@ function createEmptyDashboardState() {
     collateralDecimals: 18,
     debtDecimals: 6,
     walletBalance: 0n,
+    debtWalletBalance: 0n,
+    debtAllowance: 0n,
     userCollateral: 0n,
     userDebt: 0n,
     collateralUsd: 0n,
@@ -276,7 +309,7 @@ export default function DashboardPage() {
     async function loadDashboard() {
       if (!publicClient) {
         if (!cancelled) {
-          setDashboardState((current) => ({
+          setDashboardState(() => ({
             ...createEmptyDashboardState(),
             loading: false,
             ready: false,
@@ -325,6 +358,8 @@ export default function DashboardPage() {
           annualInterestBps,
           marketPaused,
           walletBalance,
+          debtWalletBalance,
+          debtAllowance,
           positions,
           collateralUsd,
           healthFactor,
@@ -352,6 +387,22 @@ export default function DashboardPage() {
                 abi: ERC20_ABI,
                 functionName: 'balanceOf',
                 args: [walletAddress],
+              })
+            : Promise.resolve(0n),
+          walletAddress
+            ? publicClient.readContract({
+                address: DEBT_TOKEN_ADDRESS,
+                abi: ERC20_ABI,
+                functionName: 'balanceOf',
+                args: [walletAddress],
+              })
+            : Promise.resolve(0n),
+          walletAddress
+            ? publicClient.readContract({
+                address: DEBT_TOKEN_ADDRESS,
+                abi: ERC20_ABI,
+                functionName: 'allowance',
+                args: [walletAddress, marketAddress],
               })
             : Promise.resolve(0n),
           walletAddress
@@ -396,6 +447,8 @@ export default function DashboardPage() {
           collateralDecimals,
           debtDecimals,
           walletBalance,
+          debtWalletBalance,
+          debtAllowance,
           userCollateral: positions[0],
           userDebt: positions[1],
           collateralUsd,
@@ -565,23 +618,113 @@ export default function DashboardPage() {
     setActionModal({ type: 'borrow', value: '', error: '' })
   }
 
+  async function handleRepay() {
+    if (!walletAddress) {
+      await handleConnectWallet()
+      return
+    }
+
+    if (!publicClient || !dashboardState.ready || dashboardState.marketAddress === zeroAddress) {
+      setDashboardMessage({ tone: 'warning', text: 'Repay market is not available yet.' })
+      return
+    }
+
+    if (dashboardState.marketPaused) {
+      setDashboardMessage({ tone: 'warning', text: 'Repaying is currently paused.' })
+      return
+    }
+
+    if (dashboardState.userDebt <= 0n) {
+      setDashboardMessage({ tone: 'warning', text: 'No borrow position is available to repay.' })
+      return
+    }
+
+    setActionModal({ type: 'repay', value: '', error: '' })
+  }
+
+  function handleSetRepayMax() {
+    const repayCap = calculateRepayCap(dashboardState.userDebt, dashboardState.debtWalletBalance)
+    if (repayCap <= 0n) {
+      setActionModal((current) => ({ ...current, error: `You don't have repayable ${DEBT_ASSET.symbol} right now.` }))
+      return
+    }
+
+    setActionModal((current) => ({
+      ...current,
+      value: formatUnits(repayCap, dashboardState.debtDecimals),
+      error: '',
+    }))
+  }
+
+  async function handleWithdraw() {
+    if (!walletAddress) {
+      await handleConnectWallet()
+      return
+    }
+
+    if (!publicClient || !dashboardState.ready || dashboardState.marketAddress === zeroAddress) {
+      setDashboardMessage({ tone: 'warning', text: 'Withdraw market is not available yet.' })
+      return
+    }
+
+    if (dashboardState.marketPaused) {
+      setDashboardMessage({ tone: 'warning', text: 'Withdrawing is currently paused.' })
+      return
+    }
+
+    if (dashboardState.userCollateral <= 0n) {
+      setDashboardMessage({ tone: 'warning', text: 'No supplied collateral is available to withdraw.' })
+      return
+    }
+
+    setActionModal({ type: 'withdraw', value: '', error: '' })
+  }
+
+  function handleSetWithdrawMax() {
+    const withdrawCap = calculateMaxWithdrawableCollateral({
+      userCollateral: dashboardState.userCollateral,
+      userDebt: dashboardState.userDebt,
+      healthFactor: dashboardState.healthFactor,
+    })
+    if (withdrawCap <= 0n) {
+      setActionModal((current) => ({
+        ...current,
+        error: `No ${COLLATERAL_ASSET.symbol} can be safely withdrawn at this health factor.`,
+      }))
+      return
+    }
+
+    setActionModal((current) => ({
+      ...current,
+      value: formatUnits(withdrawCap, dashboardState.collateralDecimals),
+      error: '',
+    }))
+  }
+
   async function submitActionModal() {
+    const isWithdraw = actionModal.type === 'withdraw'
+    const isBorrow = actionModal.type === 'borrow'
+    const isRepay = actionModal.type === 'repay'
     const isSupply = actionModal.type === 'supply'
-    const decimals = isSupply ? dashboardState.collateralDecimals : dashboardState.debtDecimals
+    const decimals = isSupply || isWithdraw ? dashboardState.collateralDecimals : dashboardState.debtDecimals
     const trimmedValue = actionModal.value.trim()
     let amount
+
+    if (!isSupply && !isBorrow && !isRepay && !isWithdraw) return
 
     try {
       amount = parseUnits(trimmedValue, decimals)
     } catch {
-      setActionModal((current) => ({ ...current, error: `Enter a valid ${isSupply ? 'supply' : 'borrow'} amount.` }))
+      const actionLabel = isSupply ? 'supply' : (isBorrow ? 'borrow' : (isRepay ? 'repay' : 'withdraw'))
+      setActionModal((current) => ({ ...current, error: `Enter a valid ${actionLabel} amount.` }))
       return
     }
 
     if (amount <= 0n) {
+      const actionLabel = isSupply ? 'Supply' : (isBorrow ? 'Borrow' : (isRepay ? 'Repay' : 'Withdraw'))
       setActionModal((current) => ({
         ...current,
-        error: `${isSupply ? 'Supply' : 'Borrow'} amount must be greater than zero.`,
+        error: `${actionLabel} amount must be greater than zero.`,
       }))
       return
     }
@@ -591,9 +734,69 @@ export default function DashboardPage() {
       return
     }
 
+    const maxWithdrawable = calculateMaxWithdrawableCollateral({
+      userCollateral: dashboardState.userCollateral,
+      userDebt: dashboardState.userDebt,
+      healthFactor: dashboardState.healthFactor,
+    })
+    const projectedHealthFactor = calculateProjectedHealthFactorAfterWithdraw({
+      userCollateral: dashboardState.userCollateral,
+      userDebt: dashboardState.userDebt,
+      healthFactor: dashboardState.healthFactor,
+      withdrawAmount: amount,
+      maxHealthFactor: MAX_HEALTH_FACTOR,
+    })
+    const withdrawValidationError = isWithdraw
+      ? validateWithdrawAmount({
+          amount,
+          userCollateral: dashboardState.userCollateral,
+          maxWithdrawable,
+          projectedHealthFactor,
+          minHealthFactor: WITHDRAW_HEALTH_FACTOR_MIN,
+        })
+      : ''
+
+    if (withdrawValidationError === 'above_collateral') {
+      setActionModal((current) => ({ ...current, error: 'Withdraw amount is above your supplied collateral.' }))
+      return
+    }
+    if (withdrawValidationError === 'above_safe_max') {
+      setActionModal((current) => ({
+        ...current,
+        error: `Withdraw amount exceeds the safe maximum at health factor ${formatHealthFactorLabel(WITHDRAW_HEALTH_FACTOR_MIN)}.`,
+      }))
+      return
+    }
+    if (withdrawValidationError === 'below_min_health') {
+      setActionModal((current) => ({
+        ...current,
+        error: `Withdraw amount would drop health factor below ${formatHealthFactorLabel(WITHDRAW_HEALTH_FACTOR_MIN)}.`,
+      }))
+      return
+    }
+
     const borrowCapacity = minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
-    if (!isSupply && amount > borrowCapacity) {
+    if (isBorrow && amount > borrowCapacity) {
       setActionModal((current) => ({ ...current, error: 'Borrow amount is above your available capacity.' }))
+      return
+    }
+
+    const repayValidationError = isRepay
+      ? validateRepayAmount({
+          amount,
+          userDebt: dashboardState.userDebt,
+          debtWalletBalance: dashboardState.debtWalletBalance,
+        })
+      : ''
+    if (repayValidationError === 'above_debt') {
+      setActionModal((current) => ({ ...current, error: 'Repay amount is above your outstanding debt.' }))
+      return
+    }
+    if (repayValidationError === 'above_wallet_balance') {
+      setActionModal((current) => ({
+        ...current,
+        error: `Repay amount is above your ${DEBT_ASSET.symbol} wallet balance.`,
+      }))
       return
     }
 
@@ -635,7 +838,7 @@ export default function DashboardPage() {
         })
 
         setDashboardMessage({ tone: 'success', text: `Supplied ${trimmedValue} ${COLLATERAL_ASSET.symbol}.` })
-      } else {
+      } else if (isBorrow) {
         setDashboardMessage({ tone: '', text: `Borrowing ${DEBT_ASSET.symbol}...` })
         await sendTransaction({
           to: AYNI_PROTOCOL_ADDRESS,
@@ -647,17 +850,61 @@ export default function DashboardPage() {
         })
 
         setDashboardMessage({ tone: 'success', text: `Borrowed ${trimmedValue} ${DEBT_ASSET.symbol}.` })
+      } else if (isWithdraw) {
+        setDashboardMessage({ tone: '', text: `Withdrawing ${COLLATERAL_ASSET.symbol}...` })
+        await sendTransaction({
+          to: AYNI_PROTOCOL_ADDRESS,
+          data: encodeFunctionData({
+            abi: AYNI_PROTOCOL_ABI,
+            functionName: 'withdraw',
+            args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS, amount],
+          }),
+        })
+
+        setDashboardMessage({ tone: 'success', text: `Withdrew ${trimmedValue} ${COLLATERAL_ASSET.symbol}.` })
+      } else {
+        const allowance = await publicClient.readContract({
+          address: DEBT_TOKEN_ADDRESS,
+          abi: ERC20_ABI,
+          functionName: 'allowance',
+          args: [walletAddress, dashboardState.marketAddress],
+        })
+
+        if (allowance < amount) {
+          setDashboardMessage({ tone: '', text: `Approve ${DEBT_ASSET.symbol} in your wallet.` })
+          await sendTransaction({
+            to: DEBT_TOKEN_ADDRESS,
+            data: encodeFunctionData({
+              abi: ERC20_ABI,
+              functionName: 'approve',
+              args: [dashboardState.marketAddress, maxUint256],
+            }),
+          })
+        }
+
+        setDashboardMessage({ tone: '', text: `Repaying ${DEBT_ASSET.symbol}...` })
+        await sendTransaction({
+          to: AYNI_PROTOCOL_ADDRESS,
+          data: encodeFunctionData({
+            abi: AYNI_PROTOCOL_ABI,
+            functionName: 'repay',
+            args: [COLLATERAL_TOKEN_ADDRESS, DEBT_TOKEN_ADDRESS, amount],
+          }),
+        })
+
+        setDashboardMessage({ tone: 'success', text: `Repaid ${trimmedValue} ${DEBT_ASSET.symbol}.` })
       }
 
       closeActionModal()
       setRefreshNonce((value) => value + 1)
     } catch (error) {
       const rejected = error?.code === 4001
+      const actionLabel = isSupply ? 'Supply' : (isBorrow ? 'Borrow' : (isRepay ? 'Repay' : 'Withdraw'))
       setDashboardMessage({
         tone: 'warning',
         text: rejected
-          ? `${isSupply ? 'Supply' : 'Borrow'} was cancelled.`
-          : `${isSupply ? 'Supply' : 'Borrow'} failed. Please try again.`,
+          ? `${actionLabel} was cancelled.`
+          : `${actionLabel} failed. Please try again.`,
       })
     } finally {
       setPendingAction('')
@@ -690,6 +937,14 @@ export default function DashboardPage() {
   const borrowAvailable = walletAddress
     ? minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
     : dashboardState.availableLiquidity
+  const repayAvailable = walletAddress ? minBigInt(dashboardState.userDebt, dashboardState.debtWalletBalance) : 0n
+  const withdrawAvailable = walletAddress
+    ? calculateMaxWithdrawableCollateral({
+        userCollateral: dashboardState.userCollateral,
+        userDebt: dashboardState.userDebt,
+        healthFactor: dashboardState.healthFactor,
+      })
+    : 0n
   const collateralApyLabel = `${formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}%`
   const borrowNotice = !walletAddress
     ? 'Connect wallet to check how much USDC you can borrow.'
@@ -704,22 +959,67 @@ export default function DashboardPage() {
       : []
   const borrowRows =
     showZeroBalances || borrowAvailable > 0n || dashboardState.userDebt > 0n ? [DEBT_ASSET] : []
-  const actionModalOpen = actionModal.type === 'supply' || actionModal.type === 'borrow'
+  const actionModalOpen =
+    actionModal.type === 'supply' ||
+    actionModal.type === 'borrow' ||
+    actionModal.type === 'repay' ||
+    actionModal.type === 'withdraw'
   const actionModalIsSupply = actionModal.type === 'supply'
-  const actionModalTitle = actionModalIsSupply ? `Supply ${COLLATERAL_ASSET.symbol}` : `Borrow ${DEBT_ASSET.symbol}`
-  const actionModalKicker = actionModalIsSupply ? 'Supply' : 'Borrow'
-  const actionModalBalanceLabel = actionModalIsSupply ? 'Wallet balance' : 'Available now'
+  const actionModalIsBorrow = actionModal.type === 'borrow'
+  const actionModalIsRepay = actionModal.type === 'repay'
+  const actionModalIsWithdraw = actionModal.type === 'withdraw'
+  const actionModalTitle = actionModalIsSupply
+    ? `Supply ${COLLATERAL_ASSET.symbol}`
+    : actionModalIsBorrow
+      ? `Borrow ${DEBT_ASSET.symbol}`
+      : actionModalIsRepay
+        ? `Repay ${DEBT_ASSET.symbol}`
+        : `Withdraw ${COLLATERAL_ASSET.symbol}`
+  const actionModalKicker = actionModalIsSupply
+    ? 'Supply'
+    : actionModalIsBorrow
+      ? 'Borrow'
+      : actionModalIsRepay
+        ? 'Repay'
+        : 'Withdraw'
+  const actionModalBalanceLabel = actionModalIsSupply
+    ? 'Wallet balance'
+    : actionModalIsBorrow
+      ? 'Available now'
+      : actionModalIsRepay
+        ? 'Repayable now'
+        : 'Withdrawable now'
   const actionModalBalanceValue = actionModalIsSupply
     ? `${formatTokenAmount(dashboardState.walletBalance, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
-    : `${formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+    : actionModalIsBorrow
+      ? `${formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+      : actionModalIsRepay
+        ? `${formatTokenAmount(repayAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+        : `${formatTokenAmount(withdrawAvailable, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
+  const actionModalHint = actionModalIsRepay
+    ? `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+    : ''
+  const actionModalAllowanceHint = actionModalIsRepay
+    ? dashboardState.debtAllowance > 0n
+      ? 'Allowance detected for repay.'
+      : `Approval may be required for ${DEBT_ASSET.symbol} before repay.`
+    : ''
   const actionModalButtonLabel =
     pendingAction === actionModal.type
       ? actionModalIsSupply
         ? 'Supplying...'
-        : 'Borrowing...'
+        : actionModalIsBorrow
+          ? 'Borrowing...'
+          : actionModalIsRepay
+            ? 'Repaying...'
+            : 'Withdrawing...'
       : actionModalIsSupply
         ? 'Confirm supply'
-        : 'Confirm borrow'
+        : actionModalIsBorrow
+          ? 'Confirm borrow'
+          : actionModalIsRepay
+            ? 'Confirm repay'
+            : 'Confirm withdraw'
   const borrowDetailsRows = [
     {
       label: 'Vault',
@@ -799,11 +1099,40 @@ export default function DashboardPage() {
             </header>
             {dashboardState.userCollateral > 0n ? (
               <div className="position-stack">
-                <strong className="position-value">
-                  {formatTokenAmount(dashboardState.userCollateral, dashboardState.collateralDecimals, 6)}{' '}
-                  {COLLATERAL_ASSET.symbol}
-                </strong>
-                <span className="position-meta">{formatUsdAmount(dashboardState.collateralUsd, dashboardState.debtDecimals)}</span>
+                <div className="position-value-row">
+                  <div className="position-value-with-meta">
+                    <strong className="position-value">
+                      {formatTokenAmount(dashboardState.userCollateral, dashboardState.collateralDecimals, 6)}{' '}
+                      {COLLATERAL_ASSET.symbol}
+                    </strong>
+                    <span className="position-meta position-meta-inline">
+                      {formatUsdAmount(dashboardState.collateralUsd, dashboardState.debtDecimals)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="dashboard-button dashboard-button-ghost position-action-button"
+                    onClick={handleWithdraw}
+                    disabled={!protocolConfigured || pendingAction === 'withdraw'}
+                  >
+                    {pendingAction === 'withdraw' ? 'Withdrawing...' : 'Withdraw'}
+                  </button>
+                </div>
+                <div className="position-meta-pairs">
+                  <span className="position-meta-subtle position-meta-label">Encumbered:</span>
+                  <span className="position-meta-subtle position-meta-value">
+                    {formatTokenAmount(
+                      calculateEncumberedCollateral(dashboardState.userCollateral, withdrawAvailable),
+                      dashboardState.collateralDecimals,
+                      6,
+                    )}{' '}
+                    {COLLATERAL_ASSET.symbol}
+                  </span>
+                  <span className="position-meta-subtle position-meta-label">Available:</span>
+                  <span className="position-meta-subtle position-meta-value">
+                    {formatTokenAmount(withdrawAvailable, dashboardState.collateralDecimals, 6)} {COLLATERAL_ASSET.symbol}
+                  </span>
+                </div>
               </div>
             ) : (
               <p className="lending-empty">Nothing supplied yet</p>
@@ -816,9 +1145,19 @@ export default function DashboardPage() {
             </header>
             {dashboardState.userDebt > 0n ? (
               <div className="position-stack">
-                <strong className="position-value">
-                  {formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} {DEBT_ASSET.symbol}
-                </strong>
+                <div className="position-value-row">
+                  <strong className="position-value">
+                    {formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} {DEBT_ASSET.symbol}
+                  </strong>
+                  <button
+                    type="button"
+                    className="dashboard-button dashboard-button-ghost position-action-button"
+                    onClick={handleRepay}
+                    disabled={!protocolConfigured || pendingAction === 'repay'}
+                  >
+                    {pendingAction === 'repay' ? 'Repaying...' : 'Repay'}
+                  </button>
+                </div>
                 <span className="position-meta">
                   Variable APR {formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}%
                 </span>
@@ -1022,22 +1361,35 @@ export default function DashboardPage() {
 
               <label className="dashboard-action-input-wrap">
                 <span>Amount</span>
-                <input
-                  className="dashboard-action-input"
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0"
-                  value={actionModal.value}
-                  onChange={(event) =>
-                    setActionModal((current) => ({
-                      ...current,
-                      value: event.target.value.replace(/[^0-9.]/g, ''),
-                      error: '',
-                    }))
-                  }
-                />
+                <div className="dashboard-action-input-row">
+                  <input
+                    className="dashboard-action-input"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={actionModal.value}
+                    onChange={(event) =>
+                      setActionModal((current) => ({
+                        ...current,
+                        value: event.target.value.replace(/[^0-9.]/g, ''),
+                        error: '',
+                      }))
+                    }
+                  />
+                  {actionModalIsRepay || actionModalIsWithdraw ? (
+                    <button
+                      type="button"
+                      className="dashboard-action-inline"
+                      onClick={actionModalIsRepay ? handleSetRepayMax : handleSetWithdrawMax}
+                    >
+                      Max
+                    </button>
+                  ) : null}
+                </div>
               </label>
 
+              {actionModalHint ? <p className="dashboard-action-hint">{actionModalHint}</p> : null}
+              {actionModalAllowanceHint ? <p className="dashboard-action-hint">{actionModalAllowanceHint}</p> : null}
               {actionModal.error ? <p className="dashboard-status dashboard-status-warning">{actionModal.error}</p> : null}
 
               <div className="dashboard-action-modal-actions">
@@ -1048,7 +1400,12 @@ export default function DashboardPage() {
                   type="button"
                   className="dashboard-button dashboard-button-primary"
                   onClick={submitActionModal}
-                  disabled={pendingAction === 'supply' || pendingAction === 'borrow'}
+                  disabled={
+                    pendingAction === 'supply' ||
+                    pendingAction === 'borrow' ||
+                    pendingAction === 'repay' ||
+                    pendingAction === 'withdraw'
+                  }
                 >
                   {actionModalButtonLabel}
                 </button>
