@@ -781,7 +781,7 @@ export default function SolverDashboardPage() {
 
     const hash = await window.ethereum.request({
       method: 'eth_sendTransaction',
-      params: [{ from: walletAddress, to, data }],
+      params: [{ from: walletAddress, to, data, chainId: hexValue(BigInt(PUBLIC_CHAIN_ID)) }],
     })
 
     await client?.waitForTransactionReceipt({ hash })

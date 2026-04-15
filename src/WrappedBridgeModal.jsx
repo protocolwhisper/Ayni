@@ -309,6 +309,7 @@ export default function WrappedBridgeModal({
           {
             from: walletAddress,
             to: WZKLTC_CONTRACT_ADDRESS,
+            chainId: hexValue(BigInt(WZKLTC_CHAIN_ID)),
             value: hexValue(value),
             data,
           },

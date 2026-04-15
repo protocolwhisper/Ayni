@@ -693,7 +693,16 @@ export default function DashboardPage() {
 
     const hash = await window.ethereum.request({
       method: 'eth_sendTransaction',
-      params: [{ from: walletAddress, to, data, gas, gasPrice: gasPriceHex }],
+      params: [
+        {
+          from: walletAddress,
+          to,
+          data,
+          gas,
+          gasPrice: gasPriceHex,
+          chainId: hexValue(BigInt(dashboardState.protocolChainId ?? AYNI_CHAIN_ID)),
+        },
+      ],
     })
     await publicClient.waitForTransactionReceipt({ hash })
     return hash
