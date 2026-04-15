@@ -86,23 +86,27 @@
   align-self: center;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 20px;
   font-family: var(--sky-display);
-  font-size: 0.92rem;
+  font-size: 1.84rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(243, 237, 255, 0.92);
 }
 
 .hero-brand-mark {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  color: #181120;
-  background: linear-gradient(145deg, #f1e9ff, #b89cff);
-  box-shadow: 0 0 18px rgba(220, 204, 255, 0.32);
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .hero-rail {
@@ -146,7 +150,7 @@
 .hero-title {
   margin: 14px 0 0;
   font-family: var(--sky-display);
-  font-size: clamp(3.7rem, 6.6vw, 6.2rem);
+  font-size: clamp(1.85rem, 3.3vw, 3.1rem);
   line-height: 0.92;
   font-weight: 400;
   color: rgba(244, 240, 252, 0.94);
@@ -293,6 +297,8 @@
 .hero-stars {
   position: absolute;
   inset: 0;
+  transform: scale(0.5);
+  transform-origin: top left;
 }
 
 .hero-stars span {
@@ -1214,7 +1220,7 @@
   }
 
   .hero-title {
-    font-size: clamp(3rem, 5.8vw, 4.8rem);
+    font-size: clamp(1.5rem, 2.9vw, 2.4rem);
   }
 
   .hero-rail {
@@ -1376,7 +1382,7 @@
   }
 
   .hero-title {
-    font-size: clamp(2.7rem, 10vw, 4rem);
+    font-size: clamp(1.35rem, 5vw, 2rem);
   }
 
   .hero-subtitle {

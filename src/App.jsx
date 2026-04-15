@@ -458,7 +458,7 @@ function App() {
         >
           <a className="hero-brand" href="#overview">
             <span className="hero-brand-mark" aria-hidden>
-              A
+              <img src="/Ayni Logo transparent.svg" alt="" />
             </span>
             Ayni Protocol
           </a>
@@ -480,7 +480,7 @@ function App() {
 
           <div className="hero-copy">
             <p className="hero-kicker">Unlocking Dormant Litecoin Liquidity.</p>
-            <h1 className="hero-title">The Architecture of Litecoin Value</h1>
+            <h1 className="hero-title">The reliable source of stable liquidity</h1>
             <p className="hero-subtitle">
               A trustless path from zkLTC collateral to native USDC on LitVM.
             </p>
