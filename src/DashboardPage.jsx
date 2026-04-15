@@ -472,7 +472,7 @@ export default function DashboardPage() {
                 address: DEBT_TOKEN_ADDRESS,
                 abi: ERC20_ABI,
                 functionName: 'allowance',
-                args: [walletAddress, marketAddress],
+                args: [walletAddress, AYNI_PROTOCOL_ADDRESS],
               })
             : Promise.resolve(0n),
           walletAddress
@@ -700,13 +700,13 @@ export default function DashboardPage() {
       return
     }
 
-    if (dashboardState.activeOrderId !== ZERO_ORDER_ID) {
+    if (
+      dashboardState.activeOrderId !== ZERO_ORDER_ID &&
+      dashboardState.activeOrderStatus === CLAIM_STATUS_OPEN
+    ) {
       setDashboardMessage({
         tone: 'warning',
-        text:
-          dashboardState.activeOrderStatus === CLAIM_STATUS_OPEN
-            ? 'Borrow request pending. Wait for solver fill before opening another borrow.'
-            : 'A borrow is already active. Repay it before opening another borrow.',
+        text: 'Borrow request pending. Wait for solver fill before opening another borrow.',
       })
       return
     }
@@ -993,7 +993,7 @@ export default function DashboardPage() {
           address: DEBT_TOKEN_ADDRESS,
           abi: ERC20_ABI,
           functionName: 'allowance',
-          args: [walletAddress, dashboardState.marketAddress],
+          args: [walletAddress, AYNI_PROTOCOL_ADDRESS],
         })
 
         if (allowance < amount) {
@@ -1003,7 +1003,7 @@ export default function DashboardPage() {
             data: encodeFunctionData({
               abi: ERC20_ABI,
               functionName: 'approve',
-              args: [dashboardState.marketAddress, maxUint256],
+              args: [AYNI_PROTOCOL_ADDRESS, maxUint256],
             }),
           })
         }
@@ -1084,9 +1084,7 @@ export default function DashboardPage() {
       ? 'To borrow you need to supply WzkLTC as collateral.'
       : borrowPending
         ? 'Borrow request pending. Your WzkLTC is locked while waiting for solver fill.'
-        : borrowActive
-          ? 'Debt is active. Repay through the normal market flow.'
-          : dashboardState.marketPaused
+        : dashboardState.marketPaused
         ? 'Borrowing is currently paused for this market.'
         : 'Borrow against your supplied WzkLTC.'
   const supplyRows =
@@ -1441,7 +1439,7 @@ export default function DashboardPage() {
                     type="button"
                     className="asset-action asset-action-muted"
                     onClick={handleBorrow}
-                    disabled={!protocolConfigured || pendingAction === 'borrow' || borrowPending || borrowActive}
+                    disabled={!protocolConfigured || pendingAction === 'borrow' || borrowPending}
                   >
                     {pendingAction === 'borrow' ? 'Borrowing...' : 'Borrow'}
                   </button>
