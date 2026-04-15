@@ -743,6 +743,33 @@ export default function DashboardPage() {
     setActionModal({ type: 'repay', value: '', error: '' })
   }
 
+  function handleSetSupplyMax() {
+    if (dashboardState.walletBalance <= 0n) {
+      setActionModal((current) => ({ ...current, error: `You don't have any ${COLLATERAL_ASSET.symbol} to supply.` }))
+      return
+    }
+
+    setActionModal((current) => ({
+      ...current,
+      value: formatUnits(dashboardState.walletBalance, dashboardState.collateralDecimals),
+      error: '',
+    }))
+  }
+
+  function handleSetBorrowMax() {
+    const borrowCap = minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
+    if (borrowCap <= 0n) {
+      setActionModal((current) => ({ ...current, error: `No ${DEBT_ASSET.symbol} borrow capacity available.` }))
+      return
+    }
+
+    setActionModal((current) => ({
+      ...current,
+      value: formatUnits(borrowCap, dashboardState.debtDecimals),
+      error: '',
+    }))
+  }
+
   function handleSetRepayMax() {
     const repayCap = calculateRepayCap(dashboardState.userDebt, dashboardState.debtWalletBalance)
     if (repayCap <= 0n) {
@@ -1560,15 +1587,21 @@ export default function DashboardPage() {
                       }))
                     }
                   />
-                  {actionModalIsRepay || actionModalIsWithdraw ? (
-                    <button
-                      type="button"
-                      className="dashboard-action-inline"
-                      onClick={actionModalIsRepay ? handleSetRepayMax : handleSetWithdrawMax}
-                    >
-                      Max
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    className="dashboard-action-inline"
+                    onClick={
+                      actionModalIsSupply
+                        ? handleSetSupplyMax
+                        : actionModalIsBorrow
+                          ? handleSetBorrowMax
+                          : actionModalIsRepay
+                            ? handleSetRepayMax
+                            : handleSetWithdrawMax
+                    }
+                  >
+                    Max
+                  </button>
                 </div>
               </label>
 
