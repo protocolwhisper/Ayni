@@ -25,6 +25,8 @@ const RAY_DECIMALS = 27
 const SECONDS_PER_YEAR = 31_536_000
 const COOLDOWN_PERIOD = 7 * 24 * 60 * 60
 const WITHDRAW_WINDOW = 2 * 24 * 60 * 60
+const ZERO_ORDER_ID = `0x${'0'.repeat(64)}`
+const CLAIM_STATUS_OPEN = 1
 
 const PUBLIC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL || import.meta.env.VITE_WZKLTC_RPC_URL || DEFAULT_PUBLIC_RPC_URL
 const PUBLIC_CHAIN_ID =
@@ -99,6 +101,25 @@ const PROTOCOL_ABI = [
     name: 'fill_with_pool',
     outputs: [],
     stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'bytes32', name: 'order_id', type: 'bytes32' }],
+    name: 'get_debt_position',
+    outputs: [
+      { internalType: 'address', name: 'vault', type: 'address' },
+      { internalType: 'address', name: 'borrower', type: 'address' },
+      { internalType: 'address', name: 'recipient', type: 'address' },
+      { internalType: 'address', name: 'collateral_token', type: 'address' },
+      { internalType: 'address', name: 'debt_asset', type: 'address' },
+      { internalType: 'uint256', name: 'principal', type: 'uint256' },
+      { internalType: 'uint256', name: 'protocol_fee_bps', type: 'uint256' },
+      { internalType: 'uint256', name: 'fill_deadline', type: 'uint256' },
+      { internalType: 'uint256', name: 'filled_at', type: 'uint256' },
+      { internalType: 'bytes32', name: 'expected_fill_hash', type: 'bytes32' },
+      { internalType: 'uint8', name: 'status', type: 'uint8' },
+    ],
+    stateMutability: 'view',
     type: 'function',
   },
 ]
@@ -198,6 +219,13 @@ const SOLVER_POOL_ABI = [
   {
     inputs: [{ internalType: 'uint256', name: 'shares', type: 'uint256' }],
     name: 'convertToAssets',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'assets', type: 'uint256' }],
+    name: 'convertToShares',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
@@ -307,6 +335,21 @@ function isBytes32(value) {
   return /^0x[a-fA-F0-9]{64}$/.test(value)
 }
 
+function formatDeadline(timestamp) {
+  if (!timestamp) return '—'
+  const ts = Number(timestamp)
+  if (!ts) return '—'
+  const date = new Date(ts * 1000)
+  const now = Date.now() / 1000
+  if (ts < now) return 'Expired'
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export default function SolverDashboardPage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [walletAddress, setWalletAddress] = useState('')
@@ -314,11 +357,14 @@ export default function SolverDashboardPage() {
   const [walletStatus, setWalletStatus] = useState('')
   const [solverState, setSolverState] = useState(emptySolverState)
   const [depositAmount, setDepositAmount] = useState('')
+  const [withdrawAmount, setWithdrawAmount] = useState('')
   const [redeemShares, setRedeemShares] = useState('')
   const [orderId, setOrderId] = useState('')
   const [pendingAction, setPendingAction] = useState('')
   const [solverMessage, setSolverMessage] = useState({ tone: '', text: '' })
   const [refreshNonce, setRefreshNonce] = useState(0)
+  const [availableOrders, setAvailableOrders] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
 
   const client = useMemo(() => {
     if (!PUBLIC_RPC_URL) return null
@@ -512,6 +558,79 @@ export default function SolverDashboardPage() {
     }
   }, [canResolvePool, client, refreshNonce, walletAddress])
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadAvailableOrders() {
+      if (!client || !isAddress(AYNI_PROTOCOL_ADDRESS)) {
+        return
+      }
+
+      setOrdersLoading(true)
+
+      try {
+        const logs = await client.getLogs({
+          address: AYNI_PROTOCOL_ADDRESS,
+          fromBlock: 'earliest',
+          toBlock: 'latest',
+        })
+
+        const candidateIds = [
+          ...new Set(
+            logs
+              .filter((log) => log.topics[1] && log.topics[1] !== ZERO_ORDER_ID)
+              .map((log) => log.topics[1]),
+          ),
+        ]
+
+        if (candidateIds.length === 0) {
+          if (!cancelled) setAvailableOrders([])
+          return
+        }
+
+        const results = await Promise.allSettled(
+          candidateIds.map((orderId) =>
+            client.readContract({
+              address: AYNI_PROTOCOL_ADDRESS,
+              abi: PROTOCOL_ABI,
+              functionName: 'get_debt_position',
+              args: [orderId],
+            }),
+          ),
+        )
+
+        if (cancelled) return
+
+        const openOrders = results
+          .map((result, i) => {
+            if (result.status !== 'fulfilled') return null
+            const pos = result.value
+            if (pos[10] !== CLAIM_STATUS_OPEN) return null
+            return {
+              orderId: candidateIds[i],
+              borrower: pos[1],
+              principal: pos[5],
+              fillDeadline: pos[7],
+              status: pos[10],
+            }
+          })
+          .filter(Boolean)
+
+        setAvailableOrders(openOrders)
+      } catch {
+        if (!cancelled) setAvailableOrders([])
+      } finally {
+        if (!cancelled) setOrdersLoading(false)
+      }
+    }
+
+    loadAvailableOrders()
+
+    return () => {
+      cancelled = true
+    }
+  }, [client, refreshNonce])
+
   async function handleConnectWallet() {
     if (typeof window === 'undefined' || !window.ethereum?.request) {
       setWalletStatus('No compatible wallet was detected.')
@@ -639,6 +758,71 @@ export default function SolverDashboardPage() {
     }
   }
 
+  async function handleWithdrawUsdc() {
+    if (!walletAddress) {
+      await handleConnectWallet()
+      return
+    }
+
+    if (!solverState.ready) {
+      setSolverMessage({ tone: 'warning', text: 'Provider pool is not configured yet.' })
+      return
+    }
+
+    const amountText = withdrawAmount.trim()
+    const amount = amountText ? parseUnits(amountText, solverState.assetDecimals) : 0n
+    if (amount <= 0n) {
+      setSolverMessage({ tone: 'warning', text: `Enter a ${solverState.assetSymbol} amount to withdraw.` })
+      return
+    }
+
+    if (amount > solverState.maxWithdraw) {
+      setSolverMessage({
+        tone: 'warning',
+        text:
+          solverState.maxWithdraw === 0n
+            ? 'No funds are available to withdraw. Start the cooldown period first.'
+            : `Maximum withdrawable is ${formatTokenAmount(solverState.maxWithdraw, solverState.assetDecimals, 6)} ${solverState.assetSymbol}.`,
+      })
+      return
+    }
+
+    if (!(await ensureTargetChain())) return
+
+    setPendingAction('withdraw')
+    setSolverMessage({ tone: '', text: '' })
+
+    try {
+      const shares = await client.readContract({
+        address: solverState.poolAddress,
+        abi: SOLVER_POOL_ABI,
+        functionName: 'convertToShares',
+        args: [amount],
+      })
+
+      const sharesToRedeem = shares > solverState.maxRedeem ? solverState.maxRedeem : shares
+
+      await sendTransaction({
+        to: solverState.poolAddress,
+        data: encodeFunctionData({
+          abi: SOLVER_POOL_ABI,
+          functionName: 'redeem',
+          args: [sharesToRedeem, walletAddress, walletAddress],
+        }),
+      })
+
+      setWithdrawAmount('')
+      setSolverMessage({ tone: 'success', text: `Withdrew ${amountText} ${solverState.assetSymbol}.` })
+    } catch (error) {
+      setSolverMessage({
+        tone: 'warning',
+        text: error?.code === 4001 ? 'Transaction signature was cancelled.' : 'Withdraw failed. Check your cooldown window.',
+      })
+    } finally {
+      setPendingAction('')
+    }
+  }
+
   async function handleCooldown() {
     if (!walletAddress) {
       await handleConnectWallet()
@@ -720,7 +904,7 @@ export default function SolverDashboardPage() {
     }
   }
 
-  async function handleFillOrder() {
+  async function handleFillOrder(overrideOrderId) {
     if (!walletAddress) {
       await handleConnectWallet()
       return
@@ -731,14 +915,16 @@ export default function SolverDashboardPage() {
       return
     }
 
-    if (!isBytes32(orderId.trim())) {
+    const targetId = typeof overrideOrderId === 'string' ? overrideOrderId : orderId.trim()
+
+    if (!isBytes32(targetId)) {
       setSolverMessage({ tone: 'warning', text: 'Enter a valid bytes32 order id.' })
       return
     }
 
     if (!(await ensureTargetChain())) return
 
-    setPendingAction('fill')
+    setPendingAction(`fill:${targetId}`)
     setSolverMessage({ tone: '', text: '' })
 
     try {
@@ -747,10 +933,10 @@ export default function SolverDashboardPage() {
         data: encodeFunctionData({
           abi: PROTOCOL_ABI,
           functionName: 'fill_with_pool',
-          args: [orderId.trim()],
+          args: [targetId],
         }),
       })
-      setOrderId('')
+      if (!overrideOrderId) setOrderId('')
       setSolverMessage({ tone: 'success', text: 'Order filled from provider pool.' })
     } catch (error) {
       setSolverMessage({
@@ -900,6 +1086,33 @@ export default function SolverDashboardPage() {
               {pendingAction === 'deposit' ? 'Depositing...' : 'Deposit'}
             </button>
 
+            <div className="solver-panel-divider" />
+            <label className="dashboard-action-input-wrap solver-input-wrap">
+              <span>Withdraw {solverState.assetSymbol}</span>
+              <div className="dashboard-action-input-row">
+                <input
+                  className="dashboard-action-input"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={withdrawAmount}
+                  onChange={(event) => setWithdrawAmount(event.target.value.replace(/[^0-9.]/g, ''))}
+                />
+                <button
+                  type="button"
+                  className="dashboard-action-inline"
+                  onClick={() => setWithdrawAmount(formatUnits(solverState.maxWithdraw, solverState.assetDecimals))}
+                >
+                  Max
+                </button>
+              </div>
+            </label>
+            <button type="button" className="dashboard-button dashboard-button-primary solver-wide-button" onClick={handleWithdrawUsdc} disabled={pendingAction === 'withdraw'}>
+              {pendingAction === 'withdraw' ? 'Withdrawing...' : 'Withdraw'}
+            </button>
+            <p className="solver-panel-copy">Requires a completed cooldown. Start cooldown below to unlock your funds.</p>
+
+            <div className="solver-panel-divider" />
             <div className="solver-action-split">
               <button type="button" className="dashboard-button dashboard-button-ghost" onClick={handleCooldown} disabled={pendingAction === 'cooldown'}>
                 {pendingAction === 'cooldown' ? 'Starting...' : 'Start cooldown'}
@@ -940,13 +1153,72 @@ export default function SolverDashboardPage() {
                 />
               </div>
             </label>
-            <button type="button" className="dashboard-button dashboard-button-primary solver-wide-button" onClick={handleFillOrder} disabled={pendingAction === 'fill'}>
-              {pendingAction === 'fill' ? 'Filling...' : 'Fill with pool'}
+            <button type="button" className="dashboard-button dashboard-button-primary solver-wide-button" onClick={() => handleFillOrder()} disabled={pendingAction.startsWith('fill')}>
+              {pendingAction === `fill:${orderId.trim()}` ? 'Filling...' : 'Fill with pool'}
             </button>
             <p className="solver-panel-copy">
               Withdrawals require a 7 day cooldown and stay redeemable for 2 days.
             </p>
           </article>
+        </section>
+
+        <section className="lending-card solver-orders-section">
+          <header className="lending-card-head solver-orders-head">
+            <div>
+              <h2>Available orders</h2>
+              <p className="solver-panel-copy">Open ERC-7683 borrow intents waiting to be filled.</p>
+            </div>
+            <button
+              type="button"
+              className="dashboard-button dashboard-button-ghost solver-orders-refresh"
+              onClick={() => setRefreshNonce((n) => n + 1)}
+              disabled={ordersLoading}
+            >
+              {ordersLoading ? 'Loading...' : 'Refresh'}
+            </button>
+          </header>
+
+          {ordersLoading ? (
+            <p className="solver-orders-empty">Loading orders&hellip;</p>
+          ) : availableOrders.length === 0 ? (
+            <p className="solver-orders-empty">No open orders found.</p>
+          ) : (
+            <div className="solver-orders-table-wrap">
+              <table className="solver-orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Borrower</th>
+                    <th>Principal</th>
+                    <th>Fill deadline</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {availableOrders.map((order) => (
+                    <tr key={order.orderId}>
+                      <td className="solver-orders-mono">{shortAddress(order.orderId)}</td>
+                      <td className="solver-orders-mono">{shortAddress(order.borrower)}</td>
+                      <td>{formatTokenAmount(order.principal, solverState.assetDecimals, 2)} {solverState.assetSymbol}</td>
+                      <td>{formatDeadline(order.fillDeadline)}</td>
+                      <td><span className="solver-orders-badge">Open</span></td>
+                      <td>
+                        <button
+                          type="button"
+                          className="dashboard-button dashboard-button-primary solver-orders-fill-btn"
+                          onClick={() => handleFillOrder(order.orderId)}
+                          disabled={pendingAction.startsWith('fill')}
+                        >
+                          {pendingAction === `fill:${order.orderId}` ? 'Filling…' : 'Fill'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       </div>
     </main>
