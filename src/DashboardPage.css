@@ -694,6 +694,7 @@
   justify-self: end;
 }
 
+
 .asset-cell-main {
   display: flex;
   align-items: center;
@@ -714,6 +715,9 @@
 .asset-orb {
   width: 22px;
   height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  flex: 0 0 22px;
   border-radius: 999px;
   background: linear-gradient(145deg, #efefff, #959fc9);
   color: #1d2540;

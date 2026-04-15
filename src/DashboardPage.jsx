@@ -1103,6 +1103,8 @@ export default function DashboardPage() {
           ? 'Watch closely'
           : 'Healthy'
   const healthFactorFillWidth = dashboardState.userDebt === 0n ? '22%' : `${Math.min(100, Math.max(12, healthFactorValue * 40))}%`
+  const poolLiquidity = dashboardState.availableLiquidity
+  const userBorrowLimit = walletAddress ? dashboardState.maxBorrow : 0n
   const borrowAvailable = walletAddress
     ? minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
     : dashboardState.availableLiquidity
@@ -1117,16 +1119,16 @@ export default function DashboardPage() {
     : 0n
   const collateralApyLabel = `${formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}%`
   const borrowNotice = !walletAddress
-    ? 'Connect wallet to check how much USDC you can borrow.'
+    ? 'Connect wallet to check your personal USDC borrow limit and the pool liquidity.'
     : dashboardState.userCollateral === 0n
-      ? 'To borrow you need to supply WzkLTC as collateral.'
+      ? 'To borrow you need to supply WzkLTC as collateral. Your limit is calculated per wallet.'
       : borrowPending
         ? 'Borrow request pending. Your WzkLTC is locked while waiting for solver fill.'
         : borrowActive
-          ? 'Active debt exists. Repay your outstanding USDC before opening a new borrow.'
+          ? 'Borrow against your supplied WzkLTC.'
           : dashboardState.marketPaused
             ? 'Borrowing is currently paused for this market.'
-            : 'Borrow against your supplied WzkLTC.'
+            : 'Borrow against your supplied WzkLTC. The row shows your live limit and the pool liquidity.'
   const supplyRows =
     showZeroBalances || dashboardState.walletBalance > 0n || dashboardState.userCollateral > 0n
       ? [COLLATERAL_ASSET]
@@ -1208,12 +1210,16 @@ export default function DashboardPage() {
       value: `${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`,
     },
     {
-      label: 'Instant now',
+      label: 'You can borrow now',
       value: `${formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`,
     },
     {
-      label: 'Request up to',
-      value: `${formatTokenAmount(borrowRequestLimit, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`,
+      label: 'Your collateral-backed limit',
+      value: `${formatTokenAmount(userBorrowLimit, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`,
+    },
+    {
+      label: 'Pool liquidity',
+      value: `${formatTokenAmount(poolLiquidity, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`,
     },
     {
       label: 'State',
@@ -1459,7 +1465,7 @@ export default function DashboardPage() {
             <div className="asset-table">
               <div className="asset-row asset-row-head">
                 <span>Asset</span>
-                <span>Available</span>
+                <span>You can borrow</span>
                 <span>APY, variable</span>
                 <span className="asset-head-action" aria-hidden />
                 <span className="asset-head-action" aria-hidden />
@@ -1470,7 +1476,13 @@ export default function DashboardPage() {
                     <span className="asset-orb">{asset.symbol.slice(0, 1)}</span>
                     <span className="asset-copy">
                       <strong>{asset.symbol}</strong>
-                      <small>{borrowPending ? 'Borrow request pending' : 'Standard borrow flow'}</small>
+                      <small>
+                        {borrowPending
+                          ? 'Borrow request pending'
+                          : walletAddress
+                            ? 'Per-wallet limit based on your collateral'
+                            : 'Connect wallet for your personal limit'}
+                      </small>
                     </span>
                   </div>
                   <span>{formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)}</span>
