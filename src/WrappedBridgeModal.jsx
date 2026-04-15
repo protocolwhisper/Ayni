@@ -249,6 +249,23 @@ export default function WrappedBridgeModal({
     }
   }
 
+  async function verifyLiveTargetChain() {
+    if (!WZKLTC_CHAIN_ID || typeof window === 'undefined' || !window.ethereum?.request) return true
+
+    const chainHex = await window.ethereum.request({ method: 'eth_chainId' })
+    const liveChainId = Number.parseInt(chainHex, 16)
+    setActiveChainId(liveChainId)
+
+    if (liveChainId === WZKLTC_CHAIN_ID) return true
+
+    setPanelMessage(
+      liveChainId === 1
+        ? 'Blocked a mainnet send. Switch your wallet back to LitVM before depositing.'
+        : `Wallet is on chain ${liveChainId}. Switch to chain ${WZKLTC_CHAIN_ID} before depositing.`,
+    )
+    return false
+  }
+
   async function handleDeposit() {
     if (!walletAddress) {
       await onConnectWallet?.()
@@ -272,6 +289,9 @@ export default function WrappedBridgeModal({
 
     const canProceed = await ensureTargetChain()
     if (!canProceed) return
+
+    const liveChainOk = await verifyLiveTargetChain()
+    if (!liveChainOk) return
 
     setIsSubmitting(true)
     setPanelMessage('')

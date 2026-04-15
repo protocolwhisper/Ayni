@@ -754,7 +754,31 @@ export default function SolverDashboardPage() {
     }
   }
 
+  async function verifyLiveTargetChain() {
+    if (!PUBLIC_CHAIN_ID || typeof window === 'undefined' || !window.ethereum?.request) return true
+
+    const chainHex = await window.ethereum.request({ method: 'eth_chainId' })
+    const liveChainId = Number.parseInt(chainHex, 16)
+    setWalletChainId(liveChainId)
+
+    if (liveChainId === PUBLIC_CHAIN_ID) return true
+
+    setSolverMessage({
+      tone: 'warning',
+      text:
+        liveChainId === 1
+          ? 'Blocked a mainnet transaction. Switch your wallet back to LitVM before continuing.'
+          : `Wallet is on chain ${liveChainId}. Switch your wallet to chain ${PUBLIC_CHAIN_ID}.`,
+    })
+    return false
+  }
+
   async function sendTransaction({ to, data }) {
+    const liveChainOk = await verifyLiveTargetChain()
+    if (!liveChainOk) {
+      throw new Error('wrong_chain')
+    }
+
     const hash = await window.ethereum.request({
       method: 'eth_sendTransaction',
       params: [{ from: walletAddress, to, data }],

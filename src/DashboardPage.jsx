@@ -652,7 +652,34 @@ export default function DashboardPage() {
     }
   }
 
+  async function verifyLiveProtocolChain() {
+    if (typeof window === 'undefined' || !window.ethereum?.request) return false
+
+    const targetChainId = dashboardState.protocolChainId ?? AYNI_CHAIN_ID
+    if (!targetChainId) return true
+
+    const chainHex = await window.ethereum.request({ method: 'eth_chainId' })
+    const liveChainId = Number.parseInt(chainHex, 16)
+    setWalletChainId(liveChainId)
+
+    if (liveChainId === targetChainId) return true
+
+    setDashboardMessage({
+      tone: 'warning',
+      text:
+        liveChainId === 1
+          ? 'Blocked a mainnet transaction. Switch your wallet back to LitVM before continuing.'
+          : `Wallet is on chain ${liveChainId}. Switch your wallet to chain ${targetChainId}.`,
+    })
+    return false
+  }
+
   async function sendTransaction({ to, data }) {
+    const liveChainOk = await verifyLiveProtocolChain()
+    if (!liveChainOk) {
+      throw new Error('wrong_chain')
+    }
+
     const gasPrice = await publicClient.getGasPrice()
     const gasPriceHex = `0x${gasPrice.toString(16)}`
 
