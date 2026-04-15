@@ -4,11 +4,16 @@ import { minBigInt } from './utils.js'
 export const WITHDRAW_HEALTH_FACTOR_MIN = parseUnits('1.2', 18)
 
 export function calculateRepayCap(userDebt, debtWalletBalance) {
-  return minBigInt(userDebt, debtWalletBalance)
+  // Use wallet balance as the cap, not userDebt. The on-chain debt includes
+  // interest accrued since the last state read, so capping at the cached
+  // userDebt leaves a dust remainder that can never be fully repaid.
+  return debtWalletBalance
 }
 
 export function validateRepayAmount({ amount, userDebt, debtWalletBalance }) {
-  if (amount > userDebt) return 'above_debt'
+  // Do not validate against userDebt: accrued interest means the real
+  // on-chain debt is always slightly higher than the cached value.
+  // The contract is the authoritative source for the repayable amount.
   if (amount > debtWalletBalance) return 'above_wallet_balance'
   return ''
 }

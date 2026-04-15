@@ -653,16 +653,20 @@ export default function DashboardPage() {
   }
 
   async function sendTransaction({ to, data }) {
-    const gasEstimate = await publicClient.estimateGas({
-      account: walletAddress,
-      to,
-      data,
-    })
-    const gas = `0x${((gasEstimate * 130n) / 100n).toString(16)}`
+    const gasPrice = await publicClient.getGasPrice()
+    const gasPriceHex = `0x${gasPrice.toString(16)}`
+
+    let gas
+    try {
+      const gasEstimate = await publicClient.estimateGas({ account: walletAddress, to, data })
+      gas = `0x${((gasEstimate * 130n) / 100n).toString(16)}`
+    } catch {
+      gas = '0x7A120' // 500 000 fallback
+    }
 
     const hash = await window.ethereum.request({
       method: 'eth_sendTransaction',
-      params: [{ from: walletAddress, to, data, gas }],
+      params: [{ from: walletAddress, to, data, gas, gasPrice: gasPriceHex }],
     })
     await publicClient.waitForTransactionReceipt({ hash })
     return hash
@@ -707,13 +711,13 @@ export default function DashboardPage() {
       return
     }
 
-    if (
-      dashboardState.activeOrderId !== ZERO_ORDER_ID &&
-      dashboardState.activeOrderStatus === CLAIM_STATUS_OPEN
-    ) {
+    if (dashboardState.activeOrderId !== ZERO_ORDER_ID) {
       setDashboardMessage({
         tone: 'warning',
-        text: 'Borrow request pending. Wait for solver fill before opening another borrow.',
+        text:
+          dashboardState.activeOrderStatus === CLAIM_STATUS_OPEN
+            ? 'Borrow request pending. Wait for solver fill before borrowing again.'
+            : 'Active debt exists. Repay your outstanding USDC before opening a new borrow.',
       })
       return
     }
@@ -1064,7 +1068,7 @@ export default function DashboardPage() {
         tone: 'warning',
         text: rejected
           ? `${actionLabel} was cancelled.`
-          : `${actionLabel} failed. Please try again.`,
+          : `${actionLabel} failed: ${error?.shortMessage || error?.message || 'unknown error'}`,
       })
     } finally {
       setPendingAction('')
@@ -1103,7 +1107,7 @@ export default function DashboardPage() {
     ? minBigInt(dashboardState.maxBorrow, dashboardState.availableLiquidity)
     : dashboardState.availableLiquidity
   const borrowRequestLimit = walletAddress ? dashboardState.maxBorrow : dashboardState.availableLiquidity
-  const repayAvailable = walletAddress ? minBigInt(dashboardState.userDebt, dashboardState.debtWalletBalance) : 0n
+  const repayAvailable = walletAddress ? dashboardState.debtWalletBalance : 0n
   const withdrawAvailable = walletAddress
     ? calculateMaxWithdrawableCollateral({
         userCollateral: dashboardState.userCollateral,
@@ -1118,9 +1122,11 @@ export default function DashboardPage() {
       ? 'To borrow you need to supply WzkLTC as collateral.'
       : borrowPending
         ? 'Borrow request pending. Your WzkLTC is locked while waiting for solver fill.'
-        : dashboardState.marketPaused
-        ? 'Borrowing is currently paused for this market.'
-        : 'Borrow against your supplied WzkLTC.'
+        : borrowActive
+          ? 'Active debt exists. Repay your outstanding USDC before opening a new borrow.'
+          : dashboardState.marketPaused
+            ? 'Borrowing is currently paused for this market.'
+            : 'Borrow against your supplied WzkLTC.'
   const supplyRows =
     showZeroBalances || dashboardState.walletBalance > 0n || dashboardState.userCollateral > 0n
       ? [COLLATERAL_ASSET]
@@ -1473,7 +1479,7 @@ export default function DashboardPage() {
                     type="button"
                     className="asset-action asset-action-muted"
                     onClick={handleBorrow}
-                    disabled={!protocolConfigured || pendingAction === 'borrow' || borrowPending}
+                    disabled={!protocolConfigured || pendingAction === 'borrow' || borrowPending || borrowActive}
                   >
                     {pendingAction === 'borrow' ? 'Borrowing...' : 'Borrow'}
                   </button>
