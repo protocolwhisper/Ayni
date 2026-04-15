@@ -110,8 +110,11 @@ export default function WrappedBridgeModal({
   const actionLabel = useMemo(() => {
     if (!contractConfigured) return 'Coming Soon'
     if (isSubmitting) return 'Sending...'
+    if (walletConnected && WZKLTC_CHAIN_ID && activeChainId !== null && activeChainId !== WZKLTC_CHAIN_ID) {
+      return `Switch to Chain ${WZKLTC_CHAIN_ID}`
+    }
     return 'Deposit zkLTC'
-  }, [contractConfigured, isSubmitting])
+  }, [activeChainId, contractConfigured, isSubmitting, walletConnected])
 
   const connectLabel = isConnecting ? 'Connecting...' : 'Connect Wallet'
 
@@ -326,6 +329,26 @@ export default function WrappedBridgeModal({
     }
   }
 
+  async function handlePrimaryAction() {
+    if (!walletAddress) {
+      await onConnectWallet?.()
+      return
+    }
+
+    if (WZKLTC_CHAIN_ID && activeChainId !== null && activeChainId !== WZKLTC_CHAIN_ID) {
+      const switched = await ensureTargetChain()
+      if (!switched) return
+
+      const liveChainOk = await verifyLiveTargetChain()
+      if (liveChainOk) {
+        setPanelMessage('')
+      }
+      return
+    }
+
+    await handleDeposit()
+  }
+
   return (
     <div className="wzkltc-modal-backdrop" onClick={onClose}>
       <section
@@ -467,7 +490,7 @@ export default function WrappedBridgeModal({
           <button
             type="button"
             className="wzkltc-submit"
-            onClick={handleDeposit}
+            onClick={handlePrimaryAction}
             disabled={isConnecting || isSubmitting}
           >
             {actionLabel}
