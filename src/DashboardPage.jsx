@@ -1491,7 +1491,7 @@ export default function DashboardPage() {
                     type="button"
                     className="asset-action asset-action-muted"
                     onClick={handleBorrow}
-                    disabled={!protocolConfigured || pendingAction === 'borrow' || borrowPending || borrowActive}
+                    disabled={!protocolConfigured || pendingAction === 'borrow' || borrowPending}
                   >
                     {pendingAction === 'borrow' ? 'Borrowing...' : 'Borrow'}
                   </button>
