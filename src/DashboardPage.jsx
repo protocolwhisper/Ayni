@@ -653,9 +653,16 @@ export default function DashboardPage() {
   }
 
   async function sendTransaction({ to, data }) {
+    const gasEstimate = await publicClient.estimateGas({
+      account: walletAddress,
+      to,
+      data,
+    })
+    const gas = `0x${((gasEstimate * 130n) / 100n).toString(16)}`
+
     const hash = await window.ethereum.request({
       method: 'eth_sendTransaction',
-      params: [{ from: walletAddress, to, data }],
+      params: [{ from: walletAddress, to, data, gas }],
     })
     await publicClient.waitForTransactionReceipt({ hash })
     return hash
