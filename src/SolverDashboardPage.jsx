@@ -25,8 +25,8 @@ const RAY_DECIMALS = 27
 const SECONDS_PER_YEAR = 31_536_000
 const COOLDOWN_PERIOD = 7 * 24 * 60 * 60
 const WITHDRAW_WINDOW = 2 * 24 * 60 * 60
-const ZERO_ORDER_ID = `0x${'0'.repeat(64)}`
-const CLAIM_STATUS_OPEN = 1
+const CLAIM_STATUS_OPEN = 1n
+const ORDER_LOOKBACK_BLOCKS = 20_000n
 
 const PUBLIC_RPC_URL = import.meta.env.VITE_PUBLIC_RPC_URL || import.meta.env.VITE_WZKLTC_RPC_URL || DEFAULT_PUBLIC_RPC_URL
 const PUBLIC_CHAIN_ID =
@@ -123,6 +123,60 @@ const PROTOCOL_ABI = [
     type: 'function',
   },
 ]
+
+const PROTOCOL_OPEN_EVENT = {
+  anonymous: false,
+  inputs: [
+    { indexed: true, internalType: 'bytes32', name: 'orderId', type: 'bytes32' },
+    {
+      indexed: false,
+      internalType: 'struct ResolvedCrossChainOrder',
+      name: 'resolvedOrder',
+      type: 'tuple',
+      components: [
+        { internalType: 'address', name: 'user', type: 'address' },
+        { internalType: 'uint256', name: 'originChainId', type: 'uint256' },
+        { internalType: 'uint32', name: 'openDeadline', type: 'uint32' },
+        { internalType: 'uint32', name: 'fillDeadline', type: 'uint32' },
+        { internalType: 'bytes32', name: 'orderId', type: 'bytes32' },
+        {
+          internalType: 'struct Output[]',
+          name: 'maxSpent',
+          type: 'tuple[]',
+          components: [
+            { internalType: 'bytes32', name: 'token', type: 'bytes32' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+            { internalType: 'bytes32', name: 'recipient', type: 'bytes32' },
+            { internalType: 'uint256', name: 'chainId', type: 'uint256' },
+          ],
+        },
+        {
+          internalType: 'struct Output[]',
+          name: 'minReceived',
+          type: 'tuple[]',
+          components: [
+            { internalType: 'bytes32', name: 'token', type: 'bytes32' },
+            { internalType: 'uint256', name: 'amount', type: 'uint256' },
+            { internalType: 'bytes32', name: 'recipient', type: 'bytes32' },
+            { internalType: 'uint256', name: 'chainId', type: 'uint256' },
+          ],
+        },
+        {
+          internalType: 'struct FillInstruction[]',
+          name: 'fillInstructions',
+          type: 'tuple[]',
+          components: [
+            { internalType: 'uint256', name: 'destinationChainId', type: 'uint256' },
+            { internalType: 'bytes32', name: 'destinationSettler', type: 'bytes32' },
+            { internalType: 'bytes', name: 'originData', type: 'bytes' },
+          ],
+        },
+      ],
+    },
+  ],
+  name: 'Open',
+  type: 'event',
+}
 
 const SOLVER_POOL_ABI = [
   {
@@ -336,18 +390,24 @@ function isBytes32(value) {
 }
 
 function formatDeadline(timestamp) {
-  if (!timestamp) return '—'
-  const ts = Number(timestamp)
-  if (!ts) return '—'
-  const date = new Date(ts * 1000)
-  const now = Date.now() / 1000
-  if (ts < now) return 'Expired'
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  if (!timestamp) return 'No deadline'
+
+  const now = Math.floor(Date.now() / 1000)
+  const remaining = Number(timestamp) - now
+  if (remaining <= 0) return 'Expired'
+
+  if (remaining < 3_600) {
+    const minutes = Math.max(1, Math.ceil(remaining / 60))
+    return `${minutes}m left`
+  }
+
+  if (remaining < 86_400) {
+    const hours = Math.ceil(remaining / 3_600)
+    return `${hours}h left`
+  }
+
+  const days = Math.ceil(remaining / 86_400)
+  return `${days}d left`
 }
 
 export default function SolverDashboardPage() {
@@ -562,65 +622,73 @@ export default function SolverDashboardPage() {
     let cancelled = false
 
     async function loadAvailableOrders() {
-      if (!client || !isAddress(AYNI_PROTOCOL_ADDRESS)) {
+      if (!client || !isAddress(AYNI_PROTOCOL_ADDRESS) || !isAddress(solverState.assetAddress)) {
+        setAvailableOrders([])
+        setOrdersLoading(false)
         return
       }
 
       setOrdersLoading(true)
 
       try {
+        const currentBlock = await client.getBlockNumber()
+        const fromBlock = currentBlock > ORDER_LOOKBACK_BLOCKS ? currentBlock - ORDER_LOOKBACK_BLOCKS : 0n
         const logs = await client.getLogs({
           address: AYNI_PROTOCOL_ADDRESS,
-          fromBlock: 'earliest',
+          event: PROTOCOL_OPEN_EVENT,
+          fromBlock,
           toBlock: 'latest',
         })
 
-        const candidateIds = [
-          ...new Set(
-            logs
-              .filter((log) => log.topics[1] && log.topics[1] !== ZERO_ORDER_ID)
-              .map((log) => log.topics[1]),
-          ),
-        ]
-
-        if (candidateIds.length === 0) {
-          if (!cancelled) setAvailableOrders([])
+        const orderIds = [...new Set(logs.map((log) => log.args.orderId).filter(Boolean))]
+        if (orderIds.length === 0) {
+          if (!cancelled) {
+            setAvailableOrders([])
+          }
           return
         }
 
         const results = await Promise.allSettled(
-          candidateIds.map((orderId) =>
-            client.readContract({
+          orderIds.map(async (openOrderId) => {
+            const position = await client.readContract({
               address: AYNI_PROTOCOL_ADDRESS,
               abi: PROTOCOL_ABI,
               functionName: 'get_debt_position',
-              args: [orderId],
-            }),
-          ),
+              args: [openOrderId],
+            })
+
+            return {
+              orderId: openOrderId,
+              borrower: position[1],
+              debtAsset: position[4],
+              principal: position[5],
+              fillDeadline: position[7],
+              status: position[10],
+            }
+          }),
         )
 
         if (cancelled) return
 
-        const openOrders = results
-          .map((result, i) => {
-            if (result.status !== 'fulfilled') return null
-            const pos = result.value
-            if (pos[10] !== CLAIM_STATUS_OPEN) return null
-            return {
-              orderId: candidateIds[i],
-              borrower: pos[1],
-              principal: pos[5],
-              fillDeadline: pos[7],
-              status: pos[10],
-            }
-          })
-          .filter(Boolean)
-
-        setAvailableOrders(openOrders)
+        setAvailableOrders(
+          results
+            .flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []))
+            .filter(
+              (position) =>
+                position.status === CLAIM_STATUS_OPEN &&
+                isAddress(position.debtAsset) &&
+                position.debtAsset.toLowerCase() === solverState.assetAddress.toLowerCase(),
+            )
+            .sort((left, right) => (left.fillDeadline < right.fillDeadline ? -1 : (left.fillDeadline > right.fillDeadline ? 1 : 0))),
+        )
       } catch {
-        if (!cancelled) setAvailableOrders([])
+        if (!cancelled) {
+          setAvailableOrders([])
+        }
       } finally {
-        if (!cancelled) setOrdersLoading(false)
+        if (!cancelled) {
+          setOrdersLoading(false)
+        }
       }
     }
 
@@ -629,7 +697,7 @@ export default function SolverDashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [client, refreshNonce])
+  }, [client, refreshNonce, solverState.assetAddress])
 
   async function handleConnectWallet() {
     if (typeof window === 'undefined' || !window.ethereum?.request) {
@@ -955,7 +1023,7 @@ export default function SolverDashboardPage() {
     ['Pool', poolConfigured ? shortAddress(solverState.poolAddress) : 'Not configured'],
     ['Asset', isAddress(solverState.assetAddress) ? `${solverState.assetSymbol} ${shortAddress(solverState.assetAddress)}` : 'Waiting'],
     ['Chain', PUBLIC_CHAIN_ID ? `Chain ${PUBLIC_CHAIN_ID}` : 'Any wallet chain'],
-    ['Index', solverState.liquidityIndex ? formatUnits(solverState.liquidityIndex, RAY_DECIMALS) : '0'],
+    ['Liquidity index', formatTokenAmount(solverState.liquidityIndex, RAY_DECIMALS, 6)],
   ]
 
   return (
@@ -1029,38 +1097,90 @@ export default function SolverDashboardPage() {
         </section>
 
         <section className="solver-grid solver-grid-wide">
-          <article className="lending-card solver-panel solver-position-panel">
-            <header className="lending-card-head">
-              <h2>LP position</h2>
-            </header>
-            <div className="solver-position-list">
-              <div>
-                <span>Wallet {solverState.assetSymbol}</span>
-                <strong>{formatTokenAmount(solverState.walletAssetBalance, solverState.assetDecimals, 6)}</strong>
-              </div>
-              <div>
-                <span>Shares</span>
-                <strong>{formatTokenAmount(solverState.walletShares, solverState.assetDecimals, 6)} {solverState.poolSymbol}</strong>
-              </div>
-              <div>
-                <span>Share value</span>
-                <strong>{formatTokenAmount(solverState.walletShareAssets, solverState.assetDecimals, 6)} {solverState.assetSymbol}</strong>
-              </div>
-              <div>
-                <span>Cooldown</span>
-                <strong>{cooldownStatus}</strong>
-              </div>
-            </div>
-            <div className="solver-panel-divider" />
-            <div className="solver-config-grid">
-              {solverRows.map(([label, value]) => (
-                <div key={label}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
+          <div className="solver-left-stack">
+            <article className="lending-card solver-panel solver-position-panel">
+              <header className="lending-card-head">
+                <h2>LP position</h2>
+              </header>
+              <div className="solver-position-list">
+                <div>
+                  <span>Wallet {solverState.assetSymbol}</span>
+                  <strong>{formatTokenAmount(solverState.walletAssetBalance, solverState.assetDecimals, 6)}</strong>
                 </div>
-              ))}
-            </div>
-          </article>
+                <div>
+                  <span>Shares</span>
+                  <strong>{formatTokenAmount(solverState.walletShares, solverState.assetDecimals, 6)} {solverState.poolSymbol}</strong>
+                </div>
+                <div>
+                  <span>Share value</span>
+                  <strong>{formatTokenAmount(solverState.walletShareAssets, solverState.assetDecimals, 6)} {solverState.assetSymbol}</strong>
+                </div>
+                <div>
+                  <span>Cooldown</span>
+                  <strong>{cooldownStatus}</strong>
+                </div>
+              </div>
+              <div className="solver-panel-divider" />
+              <div className="solver-config-grid">
+                {solverRows.map(([label, value]) => (
+                  <div key={label}>
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className="lending-card solver-panel solver-orders-panel solver-orders-inline">
+              <div className="solver-orders-inline-head">
+                <div>
+                  <h3>Available orders</h3>
+                  <p>Open ERC-7683 borrow intents waiting to be filled.</p>
+                </div>
+                <button
+                  type="button"
+                  className="dashboard-button dashboard-button-ghost"
+                  onClick={() => setRefreshNonce((value) => value + 1)}
+                  disabled={ordersLoading}
+                >
+                  {ordersLoading ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
+              {ordersLoading ? (
+                <p className="solver-orders-empty">Loading orders...</p>
+              ) : availableOrders.length === 0 ? (
+                <p className="solver-orders-empty">No open orders found.</p>
+              ) : (
+                <div className="solver-orders-list">
+                  {availableOrders.map((openOrder) => (
+                    <button
+                      key={openOrder.orderId}
+                      type="button"
+                      className="solver-order-card"
+                      onClick={() => setOrderId(openOrder.orderId)}
+                    >
+                      <div>
+                        <span>Order</span>
+                        <strong>{shortAddress(openOrder.orderId)}</strong>
+                      </div>
+                      <div>
+                        <span>Borrower</span>
+                        <strong>{shortAddress(openOrder.borrower)}</strong>
+                      </div>
+                      <div>
+                        <span>Amount</span>
+                        <strong>{formatTokenAmount(openOrder.principal, solverState.assetDecimals, 4)} {solverState.assetSymbol}</strong>
+                      </div>
+                      <div>
+                        <span>Deadline</span>
+                        <strong>{formatDeadline(openOrder.fillDeadline)}</strong>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </article>
+          </div>
 
           <article className="lending-card solver-panel">
             <header className="lending-card-head">
@@ -1160,65 +1280,6 @@ export default function SolverDashboardPage() {
               Withdrawals require a 7 day cooldown and stay redeemable for 2 days.
             </p>
           </article>
-        </section>
-
-        <section className="lending-card solver-orders-section">
-          <header className="lending-card-head solver-orders-head">
-            <div>
-              <h2>Available orders</h2>
-              <p className="solver-panel-copy">Open ERC-7683 borrow intents waiting to be filled.</p>
-            </div>
-            <button
-              type="button"
-              className="dashboard-button dashboard-button-ghost solver-orders-refresh"
-              onClick={() => setRefreshNonce((n) => n + 1)}
-              disabled={ordersLoading}
-            >
-              {ordersLoading ? 'Loading...' : 'Refresh'}
-            </button>
-          </header>
-
-          {ordersLoading ? (
-            <p className="solver-orders-empty">Loading orders&hellip;</p>
-          ) : availableOrders.length === 0 ? (
-            <p className="solver-orders-empty">No open orders found.</p>
-          ) : (
-            <div className="solver-orders-table-wrap">
-              <table className="solver-orders-table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Borrower</th>
-                    <th>Principal</th>
-                    <th>Fill deadline</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {availableOrders.map((order) => (
-                    <tr key={order.orderId}>
-                      <td className="solver-orders-mono">{shortAddress(order.orderId)}</td>
-                      <td className="solver-orders-mono">{shortAddress(order.borrower)}</td>
-                      <td>{formatTokenAmount(order.principal, solverState.assetDecimals, 2)} {solverState.assetSymbol}</td>
-                      <td>{formatDeadline(order.fillDeadline)}</td>
-                      <td><span className="solver-orders-badge">Open</span></td>
-                      <td>
-                        <button
-                          type="button"
-                          className="dashboard-button dashboard-button-primary solver-orders-fill-btn"
-                          onClick={() => handleFillOrder(order.orderId)}
-                          disabled={pendingAction.startsWith('fill')}
-                        >
-                          {pendingAction === `fill:${order.orderId}` ? 'Filling…' : 'Fill'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </section>
       </div>
     </main>

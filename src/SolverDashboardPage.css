@@ -128,6 +128,12 @@
   align-items: start;
 }
 
+.solver-left-stack {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+}
+
 .solver-metric-card {
   min-height: 86px;
   display: grid;
@@ -201,6 +207,76 @@
   overflow-wrap: anywhere;
 }
 
+.solver-orders-inline {
+  display: grid;
+  gap: 8px;
+}
+
+.solver-orders-panel {
+  min-height: 0;
+}
+
+.solver-orders-inline-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.solver-orders-inline-head h3 {
+  margin: 0;
+}
+
+.solver-orders-inline-head p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+.solver-orders-inline-head .dashboard-button {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+}
+
+.solver-orders-list {
+  display: grid;
+  gap: 8px;
+}
+
+.solver-order-card {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #edf1ff;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.solver-order-card span,
+.solver-orders-empty {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.solver-order-card strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.solver-orders-empty {
+  margin: 0;
+  padding: 10px 0 2px;
+}
+
 .solver-input-wrap {
   margin-top: 7px;
 }
@@ -264,100 +340,6 @@
   min-height: 34px;
 }
 
-/* Available orders table */
-.solver-orders-section {
-  margin-top: 10px;
-}
-
-.solver-orders-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.solver-orders-head h2 {
-  margin-bottom: 2px;
-}
-
-.solver-orders-refresh {
-  flex-shrink: 0;
-  min-height: 30px;
-  padding: 0 12px;
-  font-size: 0.8rem;
-}
-
-.solver-orders-empty {
-  margin: 0;
-  padding: 18px 0 8px;
-  color: var(--muted);
-  font-size: 0.82rem;
-  text-align: center;
-}
-
-.solver-orders-table-wrap {
-  overflow-x: auto;
-}
-
-.solver-orders-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-}
-
-.solver-orders-table th {
-  padding: 5px 10px 7px;
-  text-align: left;
-  color: var(--muted);
-  font-size: 0.66rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  white-space: nowrap;
-}
-
-.solver-orders-table td {
-  padding: 9px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
-.solver-orders-table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.solver-orders-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.solver-orders-mono {
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: #c5cce8;
-}
-
-.solver-orders-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  background: rgba(99, 200, 132, 0.12);
-  border: 1px solid rgba(99, 200, 132, 0.28);
-  color: #7de8a4;
-}
-
-.solver-orders-fill-btn {
-  min-height: 28px;
-  padding: 0 14px;
-  font-size: 0.78rem;
-  border-radius: 8px;
-}
-
 @media (max-width: 1180px) {
   .solver-grid,
   .solver-grid-wide {
@@ -373,6 +355,10 @@
     grid-template-columns: 1fr;
   }
 
+  .solver-left-stack {
+    grid-template-columns: 1fr;
+  }
+
   .solver-hero {
     display: grid;
   }
@@ -382,7 +368,8 @@
   }
 
   .solver-position-list,
-  .solver-config-grid {
+  .solver-config-grid,
+  .solver-order-card {
     grid-template-columns: 1fr;
   }
 
