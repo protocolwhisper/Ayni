@@ -751,7 +751,13 @@ export default function DashboardPage() {
       return
     }
 
-    setActionModal({ type: 'repay', value: '', error: '' })
+    setActionModal({
+      type: 'repay',
+      value: dashboardState.userDebt > 0n
+        ? formatUnits(dashboardState.userDebt, dashboardState.debtDecimals)
+        : '',
+      error: '',
+    })
   }
 
   function handleSetSupplyMax() {
@@ -1068,7 +1074,9 @@ export default function DashboardPage() {
         tone: 'warning',
         text: rejected
           ? `${actionLabel} was cancelled.`
-          : `${actionLabel} failed: ${error?.shortMessage || error?.message || 'unknown error'}`,
+          : isRepay
+            ? `Repay failed. Make sure you have enough ${DEBT_ASSET.symbol} in your wallet to cover the amount.`
+            : `${actionLabel} failed: ${error?.shortMessage || error?.message || 'unknown error'}`,
       })
     } finally {
       setPendingAction('')
@@ -1170,8 +1178,11 @@ export default function DashboardPage() {
       : actionModalIsRepay
         ? `${formatTokenAmount(repayAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
         : `${formatTokenAmount(withdrawAvailable, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
+  const repayWalletShort = actionModalIsRepay && dashboardState.debtWalletBalance < dashboardState.userDebt
   const actionModalHint = actionModalIsRepay
-    ? `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+    ? repayWalletShort
+      ? `Your wallet only has ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}. Bridge or transfer at least ${formatTokenAmount(dashboardState.userDebt - dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} more ${DEBT_ASSET.symbol} to fully repay.`
+      : `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
     : ''
   const actionModalAllowanceHint = actionModalIsRepay
     ? dashboardState.debtAllowance > 0n
@@ -1618,7 +1629,7 @@ export default function DashboardPage() {
                 </div>
               </label>
 
-              {actionModalHint ? <p className="dashboard-action-hint">{actionModalHint}</p> : null}
+              {actionModalHint ? <p className={repayWalletShort ? 'dashboard-status dashboard-status-warning' : 'dashboard-action-hint'}>{actionModalHint}</p> : null}
               {actionModalAllowanceHint ? <p className="dashboard-action-hint">{actionModalAllowanceHint}</p> : null}
               {actionModal.error ? <p className="dashboard-status dashboard-status-warning">{actionModal.error}</p> : null}
 
