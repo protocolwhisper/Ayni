@@ -258,6 +258,13 @@ const AYNI_VAULT_ABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [{ internalType: 'address', name: 'user', type: 'address' }],
+    name: 'debt_of',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ]
 
 
@@ -442,6 +449,7 @@ export default function DashboardPage() {
           healthFactor,
           maxBorrow,
           activeOrderId,
+          liveDebt,
         ] = await Promise.all([
           publicClient.readContract({
             address: AYNI_PROTOCOL_ADDRESS,
@@ -515,6 +523,14 @@ export default function DashboardPage() {
                 args: [walletAddress],
               })
             : Promise.resolve(ZERO_ORDER_ID),
+          walletAddress
+            ? publicClient.readContract({
+                address: marketAddress,
+                abi: AYNI_VAULT_ABI,
+                functionName: 'debt_of',
+                args: [walletAddress],
+              })
+            : Promise.resolve(0n),
         ])
 
         const activeOrderPosition =
@@ -538,7 +554,7 @@ export default function DashboardPage() {
           debtWalletBalance,
           debtAllowance,
           userCollateral: positions[0],
-          userDebt: positions[1],
+          userDebt: liveDebt > 0n ? liveDebt : positions[1],
           collateralUsd,
           healthFactor,
           maxBorrow,
@@ -751,11 +767,20 @@ export default function DashboardPage() {
       return
     }
 
+    let liveDebt = dashboardState.userDebt
+    try {
+      const fetched = await publicClient.readContract({
+        address: dashboardState.marketAddress,
+        abi: AYNI_VAULT_ABI,
+        functionName: 'debt_of',
+        args: [walletAddress],
+      })
+      if (fetched > 0n) liveDebt = fetched
+    } catch { /* fall back to cached */ }
+
     setActionModal({
       type: 'repay',
-      value: dashboardState.userDebt > 0n
-        ? formatUnits(dashboardState.userDebt, dashboardState.debtDecimals)
-        : '',
+      value: liveDebt > 0n ? formatUnits(liveDebt, dashboardState.debtDecimals) : '',
       error: '',
     })
   }
@@ -787,18 +812,31 @@ export default function DashboardPage() {
     }))
   }
 
-  function handleSetRepayMax() {
-    const repayCap = calculateRepayCap(dashboardState.userDebt, dashboardState.debtWalletBalance)
-    if (repayCap <= 0n) {
+  async function handleSetRepayMax() {
+    if (dashboardState.userDebt <= 0n) {
       setActionModal((current) => ({ ...current, error: `You don't have repayable ${DEBT_ASSET.symbol} right now.` }))
       return
     }
 
-    setActionModal((current) => ({
-      ...current,
-      value: formatUnits(repayCap, dashboardState.debtDecimals),
-      error: '',
-    }))
+    try {
+      const liveDebt = await publicClient.readContract({
+        address: dashboardState.marketAddress,
+        abi: AYNI_VAULT_ABI,
+        functionName: 'debt_of',
+        args: [walletAddress],
+      })
+      setActionModal((current) => ({
+        ...current,
+        value: formatUnits(liveDebt > 0n ? liveDebt : dashboardState.userDebt, dashboardState.debtDecimals),
+        error: '',
+      }))
+    } catch {
+      setActionModal((current) => ({
+        ...current,
+        value: formatUnits(dashboardState.userDebt, dashboardState.debtDecimals),
+        error: '',
+      }))
+    }
   }
 
   async function handleWithdraw() {
