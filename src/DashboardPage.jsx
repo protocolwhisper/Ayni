@@ -258,6 +258,13 @@ const AYNI_VAULT_ABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [{ internalType: 'address', name: 'user', type: 'address' }],
+    name: 'debt_of',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ]
 
 
@@ -442,6 +449,7 @@ export default function DashboardPage() {
           healthFactor,
           maxBorrow,
           activeOrderId,
+          liveDebt,
         ] = await Promise.all([
           publicClient.readContract({
             address: AYNI_PROTOCOL_ADDRESS,
@@ -515,6 +523,14 @@ export default function DashboardPage() {
                 args: [walletAddress],
               })
             : Promise.resolve(ZERO_ORDER_ID),
+          walletAddress
+            ? publicClient.readContract({
+                address: marketAddress,
+                abi: AYNI_VAULT_ABI,
+                functionName: 'debt_of',
+                args: [walletAddress],
+              })
+            : Promise.resolve(0n),
         ])
 
         const activeOrderPosition =
@@ -538,7 +554,7 @@ export default function DashboardPage() {
           debtWalletBalance,
           debtAllowance,
           userCollateral: positions[0],
-          userDebt: positions[1],
+          userDebt: liveDebt > 0n ? liveDebt : positions[1],
           collateralUsd,
           healthFactor,
           maxBorrow,
@@ -787,7 +803,22 @@ export default function DashboardPage() {
       return
     }
 
-    setActionModal({ type: 'repay', value: '', error: '' })
+    let liveDebt = dashboardState.userDebt
+    try {
+      const fetched = await publicClient.readContract({
+        address: dashboardState.marketAddress,
+        abi: AYNI_VAULT_ABI,
+        functionName: 'debt_of',
+        args: [walletAddress],
+      })
+      if (fetched > 0n) liveDebt = fetched
+    } catch { /* fall back to cached */ }
+
+    setActionModal({
+      type: 'repay',
+      value: liveDebt > 0n ? formatUnits(liveDebt, dashboardState.debtDecimals) : '',
+      error: '',
+    })
   }
 
   function handleSetSupplyMax() {
@@ -817,18 +848,31 @@ export default function DashboardPage() {
     }))
   }
 
-  function handleSetRepayMax() {
-    const repayCap = calculateRepayCap(dashboardState.userDebt, dashboardState.debtWalletBalance)
-    if (repayCap <= 0n) {
+  async function handleSetRepayMax() {
+    if (dashboardState.userDebt <= 0n) {
       setActionModal((current) => ({ ...current, error: `You don't have repayable ${DEBT_ASSET.symbol} right now.` }))
       return
     }
 
-    setActionModal((current) => ({
-      ...current,
-      value: formatUnits(repayCap, dashboardState.debtDecimals),
-      error: '',
-    }))
+    try {
+      const liveDebt = await publicClient.readContract({
+        address: dashboardState.marketAddress,
+        abi: AYNI_VAULT_ABI,
+        functionName: 'debt_of',
+        args: [walletAddress],
+      })
+      setActionModal((current) => ({
+        ...current,
+        value: formatUnits(liveDebt > 0n ? liveDebt : dashboardState.userDebt, dashboardState.debtDecimals),
+        error: '',
+      }))
+    } catch {
+      setActionModal((current) => ({
+        ...current,
+        value: formatUnits(dashboardState.userDebt, dashboardState.debtDecimals),
+        error: '',
+      }))
+    }
   }
 
   async function handleWithdraw() {
@@ -1104,7 +1148,9 @@ export default function DashboardPage() {
         tone: 'warning',
         text: rejected
           ? `${actionLabel} was cancelled.`
-          : `${actionLabel} failed: ${error?.shortMessage || error?.message || 'unknown error'}`,
+          : isRepay
+            ? `Repay failed. Make sure you have enough ${DEBT_ASSET.symbol} in your wallet to cover the amount.`
+            : `${actionLabel} failed: ${error?.shortMessage || error?.message || 'unknown error'}`,
       })
     } finally {
       setPendingAction('')
@@ -1208,8 +1254,11 @@ export default function DashboardPage() {
       : actionModalIsRepay
         ? `${formatTokenAmount(repayAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
         : `${formatTokenAmount(withdrawAvailable, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
+  const repayWalletShort = actionModalIsRepay && dashboardState.debtWalletBalance < dashboardState.userDebt
   const actionModalHint = actionModalIsRepay
-    ? `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+    ? repayWalletShort
+      ? `Your wallet only has ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}. Bridge or transfer at least ${formatTokenAmount(dashboardState.userDebt - dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} more ${DEBT_ASSET.symbol} to fully repay.`
+      : `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
     : ''
   const actionModalAllowanceHint = actionModalIsRepay
     ? dashboardState.debtAllowance > 0n
@@ -1666,7 +1715,7 @@ export default function DashboardPage() {
                 </div>
               </label>
 
-              {actionModalHint ? <p className="dashboard-action-hint">{actionModalHint}</p> : null}
+              {actionModalHint ? <p className={repayWalletShort ? 'dashboard-status dashboard-status-warning' : 'dashboard-action-hint'}>{actionModalHint}</p> : null}
               {actionModalAllowanceHint ? <p className="dashboard-action-hint">{actionModalAllowanceHint}</p> : null}
               {actionModal.error ? <p className="dashboard-status dashboard-status-warning">{actionModal.error}</p> : null}
 
