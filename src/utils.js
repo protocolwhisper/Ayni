@@ -20,6 +20,17 @@ export function formatTokenAmount(rawAmount, decimals, maximumFractionDigits = 4
   })
 }
 
+export function formatTokenAmountCeil(rawAmount, decimals, fractionDigits = 2) {
+  const amount = Number(formatUnits(rawAmount, decimals))
+  if (!Number.isFinite(amount)) return '0'
+  const factor = 10 ** fractionDigits
+  const ceiled = Math.ceil(amount * factor) / factor
+  return ceiled.toLocaleString('en-US', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })
+}
+
 export function formatUsdAmount(rawAmount, decimals) {
   const amount = Number(formatUnits(rawAmount, decimals))
   if (!Number.isFinite(amount)) return '$0.00'

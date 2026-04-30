@@ -24,6 +24,7 @@ import {
   MAX_HEALTH_FACTOR,
   formatHealthFactorLabel,
   formatTokenAmount,
+  formatTokenAmountCeil,
   formatUsdAmount,
   hexValue,
   minBigInt,
@@ -814,9 +815,12 @@ export default function DashboardPage() {
       if (fetched > 0n) liveDebt = fetched
     } catch { /* fall back to cached */ }
 
+    const scaleFactor = 10n ** BigInt(dashboardState.debtDecimals - 2)
+    const ceiledDebt = ((liveDebt + scaleFactor - 1n) / scaleFactor) * scaleFactor
+
     setActionModal({
       type: 'repay',
-      value: liveDebt > 0n ? formatUnits(liveDebt, dashboardState.debtDecimals) : '',
+      value: liveDebt > 0n ? formatUnits(ceiledDebt, dashboardState.debtDecimals) : '',
       error: '',
     })
   }
@@ -854,6 +858,12 @@ export default function DashboardPage() {
       return
     }
 
+    const scaleFactor = 10n ** BigInt(dashboardState.debtDecimals - 2)
+    function ceilToTwoDp(raw) {
+      const ceiled = ((raw + scaleFactor - 1n) / scaleFactor) * scaleFactor
+      return formatUnits(ceiled, dashboardState.debtDecimals)
+    }
+
     try {
       const liveDebt = await publicClient.readContract({
         address: dashboardState.marketAddress,
@@ -863,13 +873,13 @@ export default function DashboardPage() {
       })
       setActionModal((current) => ({
         ...current,
-        value: formatUnits(liveDebt > 0n ? liveDebt : dashboardState.userDebt, dashboardState.debtDecimals),
+        value: ceilToTwoDp(liveDebt > 0n ? liveDebt : dashboardState.userDebt),
         error: '',
       }))
     } catch {
       setActionModal((current) => ({
         ...current,
-        value: formatUnits(dashboardState.userDebt, dashboardState.debtDecimals),
+        value: ceilToTwoDp(dashboardState.userDebt),
         error: '',
       }))
     }
@@ -1250,15 +1260,15 @@ export default function DashboardPage() {
   const actionModalBalanceValue = actionModalIsSupply
     ? `${formatTokenAmount(dashboardState.walletBalance, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
     : actionModalIsBorrow
-      ? `${formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+      ? `${formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 2)} ${DEBT_ASSET.symbol}`
       : actionModalIsRepay
-        ? `${formatTokenAmount(repayAvailable, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+        ? `${formatTokenAmountCeil(dashboardState.userDebt, dashboardState.debtDecimals, 2)} ${DEBT_ASSET.symbol}`
         : `${formatTokenAmount(withdrawAvailable, dashboardState.collateralDecimals, 6)} ${COLLATERAL_ASSET.symbol}`
   const repayWalletShort = actionModalIsRepay && dashboardState.debtWalletBalance < dashboardState.userDebt
   const actionModalHint = actionModalIsRepay
     ? repayWalletShort
-      ? `Your wallet only has ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}. Bridge or transfer at least ${formatTokenAmount(dashboardState.userDebt - dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} more ${DEBT_ASSET.symbol} to fully repay.`
-      : `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} ${DEBT_ASSET.symbol}`
+      ? `Your wallet only has ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 2)} ${DEBT_ASSET.symbol}. Bridge or transfer at least ${formatTokenAmountCeil(dashboardState.userDebt - dashboardState.debtWalletBalance, dashboardState.debtDecimals, 2)} more ${DEBT_ASSET.symbol} to fully repay.`
+      : `Wallet balance ${formatTokenAmount(dashboardState.debtWalletBalance, dashboardState.debtDecimals, 2)} ${DEBT_ASSET.symbol} • Outstanding debt ${formatTokenAmountCeil(dashboardState.userDebt, dashboardState.debtDecimals, 2)} ${DEBT_ASSET.symbol}`
     : ''
   const actionModalAllowanceHint = actionModalIsRepay
     ? dashboardState.debtAllowance > 0n
@@ -1391,7 +1401,7 @@ export default function DashboardPage() {
                 <div className="position-value-row">
                   <div className="position-value-with-meta">
                     <strong className="position-value">
-                      {formatTokenAmount(dashboardState.userCollateral, dashboardState.collateralDecimals, 6)}{' '}
+                      {formatTokenAmount(dashboardState.userCollateral, dashboardState.collateralDecimals, 2)}{' '}
                       {COLLATERAL_ASSET.symbol}
                     </strong>
                     <span className="position-meta position-meta-inline">
@@ -1456,7 +1466,7 @@ export default function DashboardPage() {
               <div className="position-stack">
                 <div className="position-value-row">
                   <strong className="position-value">
-                    {formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 6)} {DEBT_ASSET.symbol}
+                    {formatTokenAmount(dashboardState.userDebt, dashboardState.debtDecimals, 2)} {DEBT_ASSET.symbol}
                   </strong>
                   <button
                     type="button"
@@ -1466,6 +1476,19 @@ export default function DashboardPage() {
                   >
                     {pendingAction === 'repay' ? 'Repaying...' : 'Repay'}
                   </button>
+                </div>
+                <div className="position-meta-pairs">
+                  <span className="position-meta-subtle position-meta-label">Estimated Interest:</span>
+                  <span className="position-meta-subtle position-meta-value">
+                    {formatTokenAmountCeil(
+                      dashboardState.userDebt > dashboardState.activeOrderPrincipal
+                        ? dashboardState.userDebt - dashboardState.activeOrderPrincipal
+                        : 0n,
+                      dashboardState.debtDecimals,
+                      2,
+                    )}{' '}
+                    {DEBT_ASSET.symbol}
+                  </span>
                 </div>
                 <span className="position-meta">
                   Variable APR {formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}% • Repay stays in the normal market flow.
@@ -1502,7 +1525,7 @@ export default function DashboardPage() {
               <div className="asset-row asset-row-head">
                 <span>Asset</span>
                 <span>Wallet balance</span>
-                <span>APY</span>
+                <span className="col-apy">APY</span>
                 <span>Can be collateral</span>
                 <span className="asset-head-action" aria-hidden />
               </div>
@@ -1516,7 +1539,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <span>{formatTokenAmount(dashboardState.walletBalance, dashboardState.collateralDecimals, 6)}</span>
-                  <span>{collateralApyLabel}</span>
+                  <span className="col-apy">{collateralApyLabel}</span>
                   <span>{asset.collateral ? '✓' : '—'}</span>
                   <button
                     type="button"
@@ -1551,7 +1574,7 @@ export default function DashboardPage() {
               <div className="asset-row asset-row-head">
                 <span>Asset</span>
                 <span>You can borrow</span>
-                <span>APY, variable</span>
+                <span>APR</span>
                 <span className="asset-head-action" aria-hidden />
                 <span className="asset-head-action" aria-hidden />
               </div>
@@ -1570,7 +1593,7 @@ export default function DashboardPage() {
                       </small>
                     </span>
                   </div>
-                  <span>{formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 6)}</span>
+                  <span>{formatTokenAmount(borrowAvailable, dashboardState.debtDecimals, 2)}</span>
                   <span>{formatTokenAmount(dashboardState.annualInterestBps, 2, 2)}%</span>
                   <button
                     type="button"
