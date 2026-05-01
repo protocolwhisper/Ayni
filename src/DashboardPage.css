@@ -673,6 +673,10 @@
   justify-self: end;
 }
 
+.col-apy {
+  display: none !important;
+}
+
 .asset-row-head {
   color: var(--muted);
   font-size: 0.72rem;
