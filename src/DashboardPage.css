@@ -464,6 +464,31 @@
   white-space: nowrap;
 }
 
+.pending-borrow-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-right: 5px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  animation: borrow-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes borrow-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.borrow-expired-value {
+  color: #e07070;
+}
+
+.borrow-expired-meta {
+  color: #c98080;
+}
+
 .position-meta-pairs {
   display: grid;
   grid-template-columns: max-content max-content;
