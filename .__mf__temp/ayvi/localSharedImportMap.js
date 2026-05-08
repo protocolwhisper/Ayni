@@ -19,7 +19,7 @@
       
           "react": {
             name: "react",
-            version: "19.2.5",
+            version: "19.2.4",
             scope: ["default"],
             loaded: false,
             from: "ayvi",
@@ -44,14 +44,14 @@
             },
             shareConfig: {
               singleton: false,
-              requiredVersion: "^19.2.5",
+              requiredVersion: "^19.2.4",
               
             }
           }
         ,
           "react-dom": {
             name: "react-dom",
-            version: "19.2.5",
+            version: "19.2.4",
             scope: ["default"],
             loaded: false,
             from: "ayvi",
@@ -76,7 +76,7 @@
             },
             shareConfig: {
               singleton: false,
-              requiredVersion: "^19.2.5",
+              requiredVersion: "^19.2.4",
               
             }
           }
